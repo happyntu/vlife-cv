@@ -106,7 +106,7 @@ class CratController(
     fun getBySerial(
         @Parameter(description = "佣金率序號 (主鍵)")
         @PathVariable serial: Long
-    ): ResponseEntity<ApiResponse<CratResponse?>> {
+    ): ResponseEntity<ApiResponse<CratResponse>> {
         val rate = service.findBySerial(serial)
         return if (rate != null) {
             ResponseEntity.ok(ApiResponse.success(rate.toResponse()))

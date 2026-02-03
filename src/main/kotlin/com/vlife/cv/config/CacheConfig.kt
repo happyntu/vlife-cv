@@ -37,7 +37,10 @@ class CacheConfig {
         const val CACHE_CVDI_BY_PLAN = "cvdiByPlan"
         const val CACHE_CVRF_BY_PLAN = "cvrfByPlan"
 
+        /** 快取 TTL：1 小時（佣金率等資料變更頻率低，每日批次更新） */
         private const val DEFAULT_EXPIRE_HOURS = 1L
+
+        /** 最大快取項目數：60,000（CRAT 53,108 筆 + 其他快取 + 緩衝空間） */
         private const val DEFAULT_MAX_SIZE = 60_000L
     }
 

@@ -38,12 +38,16 @@ class CvcoMapperIntegrationTest {
     companion object {
         private const val ORACLE_IMAGE = "gvenzl/oracle-xe:21-slim"
 
+        /**
+         * 使用 withInitScript() 在連線用戶 schema 中建立表格
+         * CV 用戶連線後，CV.CVCO 等同於 CVCO（當前 schema）
+         */
         @Container
         @JvmStatic
         val oracle: OracleContainer = OracleContainer(DockerImageName.parse(ORACLE_IMAGE))
             .withDatabaseName("VLIFE")
-            .withUsername("vlife")
-            .withPassword("vlife123")
+            .withUsername("CV")
+            .withPassword("cv123")
             .withInitScript("init-cv-schema.sql")
 
         @JvmStatic
@@ -75,7 +79,7 @@ class CvcoMapperIntegrationTest {
         @Test
         fun `should return coverage when exists`() {
             // Given
-            insertTestCoverage("P000000001", 1, "PLAN1", "1")
+            insertTestCoverage("P000000001", 1, "PLAN1", "P")
 
             // When
             val result = cvcoMapper.findById("P000000001", 1)
@@ -85,6 +89,7 @@ class CvcoMapperIntegrationTest {
             assertEquals("P000000001", result.policyNo)
             assertEquals(1, result.coverageNo)
             assertEquals("PLAN1", result.planCode)
+            println("✓ findById: 成功查詢存在的承保範圍")
         }
 
         @Test
@@ -94,6 +99,7 @@ class CvcoMapperIntegrationTest {
 
             // Then
             assertNull(result)
+            println("✓ findById: 不存在時正確返回 null")
         }
     }
 
@@ -104,9 +110,9 @@ class CvcoMapperIntegrationTest {
         @Test
         fun `should return all coverages for policy`() {
             // Given
-            insertTestCoverage("P000000001", 1, "PLAN1", "1")
-            insertTestCoverage("P000000001", 2, "PLAN2", "1")
-            insertTestCoverage("P000000002", 1, "PLAN1", "1")
+            insertTestCoverage("P000000001", 1, "PLAN1", "P")
+            insertTestCoverage("P000000001", 2, "PLAN2", "P")
+            insertTestCoverage("P000000002", 1, "PLAN1", "P")
 
             // When
             val result = cvcoMapper.findByPolicyNo("P000000001")
@@ -115,6 +121,7 @@ class CvcoMapperIntegrationTest {
             assertEquals(2, result.size)
             assertEquals(1, result[0].coverageNo)
             assertEquals(2, result[1].coverageNo)
+            println("✓ findByPolicyNo: 成功查詢保單 P000000001 的 ${result.size} 筆承保範圍")
         }
 
         @Test
@@ -124,6 +131,7 @@ class CvcoMapperIntegrationTest {
 
             // Then
             assertTrue(result.isEmpty())
+            println("✓ findByPolicyNo: 未知保單正確返回空清單")
         }
     }
 
@@ -134,9 +142,9 @@ class CvcoMapperIntegrationTest {
         @Test
         fun `should return coverages by plan code`() {
             // Given
-            insertTestCoverage("P000000001", 1, "PLAN1", "1")
-            insertTestCoverage("P000000002", 1, "PLAN1", "1")
-            insertTestCoverage("P000000003", 1, "PLAN2", "1")
+            insertTestCoverage("P000000001", 1, "PLAN1", "P")
+            insertTestCoverage("P000000002", 1, "PLAN1", "P")
+            insertTestCoverage("P000000003", 1, "PLAN2", "P")
 
             // When
             val result = cvcoMapper.findByPlanCode("PLAN1")
@@ -144,6 +152,7 @@ class CvcoMapperIntegrationTest {
             // Then
             assertEquals(2, result.size)
             assertTrue(result.all { it.planCode == "PLAN1" })
+            println("✓ findByPlanCode: 成功查詢險種 PLAN1 的 ${result.size} 筆承保範圍")
         }
     }
 
@@ -153,17 +162,19 @@ class CvcoMapperIntegrationTest {
 
         @Test
         fun `should return coverages by status code`() {
-            // Given
-            insertTestCoverage("P000000001", 1, "PLAN1", "1")
-            insertTestCoverage("P000000002", 1, "PLAN1", "2")
-            insertTestCoverage("P000000003", 1, "PLAN1", "1")
+            // Given - 使用 CoverageStatusCode enum 定義的狀態碼
+            // P=有效, M=滿期, L=失效
+            insertTestCoverage("P000000001", 1, "PLAN1", "P")  // 有效
+            insertTestCoverage("P000000002", 1, "PLAN1", "M")  // 滿期
+            insertTestCoverage("P000000003", 1, "PLAN1", "P")  // 有效
 
             // When
-            val result = cvcoMapper.findByStatusCode("1")
+            val result = cvcoMapper.findByStatusCode("P")
 
             // Then
             assertEquals(2, result.size)
-            assertTrue(result.all { it.statusCode == "1" })
+            assertTrue(result.all { it.statusCode == "P" })
+            println("✓ findByStatusCode: 成功查詢狀態碼 P (有效) 的 ${result.size} 筆承保範圍")
         }
     }
 
@@ -174,10 +185,10 @@ class CvcoMapperIntegrationTest {
         @Test
         fun `should return distinct plan codes`() {
             // Given
-            insertTestCoverage("P000000001", 1, "PLAN1", "1")
-            insertTestCoverage("P000000002", 1, "PLAN1", "1")
-            insertTestCoverage("P000000003", 1, "PLAN2", "1")
-            insertTestCoverage("P000000004", 1, "PLAN3", "1")
+            insertTestCoverage("P000000001", 1, "PLAN1", "P")
+            insertTestCoverage("P000000002", 1, "PLAN1", "P")
+            insertTestCoverage("P000000003", 1, "PLAN2", "P")
+            insertTestCoverage("P000000004", 1, "PLAN3", "P")
 
             // When
             val result = cvcoMapper.findAllPlanCodes()
@@ -187,6 +198,7 @@ class CvcoMapperIntegrationTest {
             assertTrue(result.contains("PLAN1"))
             assertTrue(result.contains("PLAN2"))
             assertTrue(result.contains("PLAN3"))
+            println("✓ findAllPlanCodes: 成功取得 ${result.size} 個不重複的險種代碼")
         }
     }
 
@@ -197,15 +209,16 @@ class CvcoMapperIntegrationTest {
         @Test
         fun `should return correct count`() {
             // Given
-            insertTestCoverage("P000000001", 1, "PLAN1", "1")
-            insertTestCoverage("P000000001", 2, "PLAN2", "1")
-            insertTestCoverage("P000000001", 3, "PLAN3", "1")
+            insertTestCoverage("P000000001", 1, "PLAN1", "P")
+            insertTestCoverage("P000000001", 2, "PLAN2", "P")
+            insertTestCoverage("P000000001", 3, "PLAN3", "P")
 
             // When
             val count = cvcoMapper.countByPolicyNo("P000000001")
 
             // Then
             assertEquals(3, count)
+            println("✓ countByPolicyNo: 正確計算保單承保範圍數量為 $count")
         }
 
         @Test
@@ -215,11 +228,19 @@ class CvcoMapperIntegrationTest {
 
             // Then
             assertEquals(0, count)
+            println("✓ countByPolicyNo: 未知保單正確返回 0")
         }
     }
 
     /**
      * 插入測試承保範圍資料
+     *
+     * 欄位驗證規則（Cvco Entity init block）：
+     * - policyNo: 1-10 字元
+     * - planCode: 1-5 字元
+     * - version: 必須恰好 1 字元
+     * - rateSex: 必須恰好 1 字元
+     * - statusCode: 必須恰好 1 字元
      */
     private fun insertTestCoverage(
         policyNo: String,
@@ -234,10 +255,19 @@ class CvcoMapperIntegrationTest {
                 POLICY_NO, COVERAGE_NO, PLAN_CODE, VERSION, RATE_SEX, RATE_AGE,
                 RATE_SUB_1, RATE_SUB_2, CO_ISSUE_DATE, CO_STATUS_CODE,
                 INSURANCE_TYPE_3, PROCESS_DATE, PROCESS_TYPE
-            ) VALUES (?, ?, ?, '001', 'M', 30, 'A', 'B', ?, ?, 'A', ?, 'NB')
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """.trimIndent(),
             policyNo, coverageNo, planCode,
-            java.sql.Date.valueOf(today), statusCode, java.sql.Date.valueOf(today)
+            "1",     // VERSION: 1 字元
+            "1",     // RATE_SEX: 1=男
+            30,      // RATE_AGE
+            "01",    // RATE_SUB_1: 2 碼
+            "001",   // RATE_SUB_2: 3 碼
+            java.sql.Date.valueOf(today),  // CO_ISSUE_DATE
+            statusCode,                     // CO_STATUS_CODE: P=有效, M=滿期
+            "R",     // INSURANCE_TYPE_3: R=一般保險
+            java.sql.Date.valueOf(today),  // PROCESS_DATE
+            "01"     // PROCESS_TYPE: 2 碼
         )
     }
 }

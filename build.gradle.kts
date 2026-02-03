@@ -13,4 +13,11 @@ tasks.named("jar") { enabled = true }
 dependencies {
     implementation(project(":modules:vlife-common"))
     implementation(project(":modules:vlife-domain-api"))
+
+    // Spring Boot Starters
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+
+    // PageHelper 分頁插件 (ADR-015)
+    implementation("com.github.pagehelper:pagehelper-spring-boot-starter:2.1.0")
 }

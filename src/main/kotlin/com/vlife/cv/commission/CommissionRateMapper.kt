@@ -161,6 +161,8 @@ interface CommissionRateMapper {
     /**
      * 依多條件查詢佣金率
      *
+     * 注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+     *
      * @param commClassCode 佣金率類別碼 (可選)
      * @param commLineCode 業務線代號 (可選)
      * @param cratType 佣金率型態 (可選)
@@ -206,7 +208,6 @@ interface CommissionRateMapper {
             </if>
         </where>
         ORDER BY COMM_CLASS_CODE, COMM_LINE_CODE, STR_DATE DESC
-        FETCH FIRST 1000 ROWS ONLY
         </script>
     """)
     fun search(

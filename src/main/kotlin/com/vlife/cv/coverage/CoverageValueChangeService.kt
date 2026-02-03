@@ -1,5 +1,8 @@
 package com.vlife.cv.coverage
 
+import com.github.pagehelper.PageHelper
+import com.github.pagehelper.PageInfo
+import com.vlife.cv.common.PageRequest
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -22,7 +25,23 @@ class CoverageValueChangeService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**
-     * 依保單號碼查詢所有承保範圍
+     * 依保單號碼查詢所有承保範圍 (分頁)
+     *
+     * @param policyNo 保單號碼
+     * @param pageRequest 分頁參數
+     * @return 分頁結果
+     */
+    fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<CoverageValueChange> {
+        require(policyNo.isNotBlank() && policyNo.length <= 10) {
+            "policyNo must be non-blank and at most 10 characters"
+        }
+        log.debug("Finding coverages for policy: {} (page: {})", policyNo, pageRequest.pageNum)
+        return PageHelper.startPage<CoverageValueChange>(pageRequest.pageNum, pageRequest.pageSize)
+            .doSelectPageInfo { mapper.findByPolicyNo(policyNo) }
+    }
+
+    /**
+     * 依保單號碼查詢所有承保範圍 (不分頁)
      *
      * @param policyNo 保單號碼
      * @return 承保範圍清單
@@ -52,10 +71,26 @@ class CoverageValueChangeService(
     }
 
     /**
-     * 依險種代碼查詢承保範圍
+     * 依險種代碼查詢承保範圍 (分頁)
      *
      * @param planCode 險種代碼
-     * @return 承保範圍清單 (最多 1000 筆)
+     * @param pageRequest 分頁參數
+     * @return 分頁結果
+     */
+    fun findByPlanCode(planCode: String, pageRequest: PageRequest): PageInfo<CoverageValueChange> {
+        require(planCode.isNotBlank() && planCode.length <= 5) {
+            "planCode must be non-blank and at most 5 characters"
+        }
+        log.debug("Finding coverages for plan code: {} (page: {})", planCode, pageRequest.pageNum)
+        return PageHelper.startPage<CoverageValueChange>(pageRequest.pageNum, pageRequest.pageSize)
+            .doSelectPageInfo { mapper.findByPlanCode(planCode) }
+    }
+
+    /**
+     * 依險種代碼查詢承保範圍 (不分頁)
+     *
+     * @param planCode 險種代碼
+     * @return 承保範圍清單
      */
     fun findByPlanCode(planCode: String): List<CoverageValueChange> {
         require(planCode.isNotBlank() && planCode.length <= 5) {
@@ -66,10 +101,26 @@ class CoverageValueChangeService(
     }
 
     /**
-     * 依承保狀態碼查詢承保範圍
+     * 依承保狀態碼查詢承保範圍 (分頁)
      *
      * @param statusCode 承保狀態碼
-     * @return 承保範圍清單 (最多 1000 筆)
+     * @param pageRequest 分頁參數
+     * @return 分頁結果
+     */
+    fun findByStatusCode(statusCode: String, pageRequest: PageRequest): PageInfo<CoverageValueChange> {
+        require(statusCode.isNotBlank() && statusCode.length <= 1) {
+            "statusCode must be exactly 1 character"
+        }
+        log.debug("Finding coverages by status: {} (page: {})", statusCode, pageRequest.pageNum)
+        return PageHelper.startPage<CoverageValueChange>(pageRequest.pageNum, pageRequest.pageSize)
+            .doSelectPageInfo { mapper.findByStatusCode(statusCode) }
+    }
+
+    /**
+     * 依承保狀態碼查詢承保範圍 (不分頁)
+     *
+     * @param statusCode 承保狀態碼
+     * @return 承保範圍清單
      */
     fun findByStatusCode(statusCode: String): List<CoverageValueChange> {
         require(statusCode.isNotBlank() && statusCode.length <= 1) {
@@ -80,10 +131,20 @@ class CoverageValueChangeService(
     }
 
     /**
-     * 依承保狀態列舉查詢承保範圍
+     * 依承保狀態列舉查詢承保範圍 (分頁)
      *
      * @param status 承保狀態列舉
-     * @return 承保範圍清單 (最多 1000 筆)
+     * @param pageRequest 分頁參數
+     * @return 分頁結果
+     */
+    fun findByStatus(status: CoverageStatusCode, pageRequest: PageRequest): PageInfo<CoverageValueChange> =
+        findByStatusCode(status.code, pageRequest)
+
+    /**
+     * 依承保狀態列舉查詢承保範圍 (不分頁)
+     *
+     * @param status 承保狀態列舉
+     * @return 承保範圍清單
      */
     fun findByStatus(status: CoverageStatusCode): List<CoverageValueChange> =
         findByStatusCode(status.code)

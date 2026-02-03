@@ -14,6 +14,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/**
+ * CoverageValueChangeService 單元測試
+ *
+ * 注意：PageHelper 分頁功能使用 ThreadLocal 機制，難以在單元測試中模擬。
+ * 因此不分頁版本直接調用 Mapper，分頁版本應透過整合測試驗證。
+ * 參見 ADR-015 測試策略說明。
+ */
 @DisplayName("CoverageValueChangeService 單元測試")
 class CoverageValueChangeServiceTest {
 
@@ -117,6 +124,51 @@ class CoverageValueChangeServiceTest {
     }
 
     @Nested
+    @DisplayName("findByPlanCode")
+    inner class FindByPlanCode {
+
+        @Test
+        fun `should return coverages for given plan code`() {
+            // Given
+            val coverages = listOf(
+                createTestCoverage(policyNo = "P000000001"),
+                createTestCoverage(policyNo = "P000000002")
+            )
+            every { mapper.findByPlanCode("A1001") } returns coverages
+
+            // When
+            val result = service.findByPlanCode("A1001")
+
+            // Then
+            assertEquals(2, result.size)
+            verify(exactly = 1) { mapper.findByPlanCode("A1001") }
+        }
+    }
+
+    @Nested
+    @DisplayName("findByStatusCode")
+    inner class FindByStatusCode {
+
+        @Test
+        fun `should return coverages for given status`() {
+            // Given
+            val coverages = listOf(
+                createTestCoverage(statusCode = "P"),
+                createTestCoverage(statusCode = "P")
+            )
+            every { mapper.findByStatusCode("P") } returns coverages
+
+            // When
+            val result = service.findByStatusCode("P")
+
+            // Then
+            assertEquals(2, result.size)
+            assertTrue(result.all { it.statusCode == "P" })
+            verify(exactly = 1) { mapper.findByStatusCode("P") }
+        }
+    }
+
+    @Nested
     @DisplayName("findActiveCoverages")
     inner class FindActiveCoverages {
 
@@ -169,6 +221,13 @@ class CoverageValueChangeServiceTest {
     }
 }
 
+/**
+ * ProductUnitService 單元測試
+ *
+ * 注意：PageHelper 分頁功能使用 ThreadLocal 機制，難以在單元測試中模擬。
+ * 因此不分頁版本直接調用 Mapper，分頁版本應透過整合測試驗證。
+ * 參見 ADR-015 測試策略說明。
+ */
 @DisplayName("ProductUnitService 單元測試")
 class ProductUnitServiceTest {
 
@@ -204,6 +263,29 @@ class ProductUnitServiceTest {
         approvedDate = null,
         programIdCvpu = null
     )
+
+    @Nested
+    @DisplayName("findByPolicyNo")
+    inner class FindByPolicyNo {
+
+        @Test
+        fun `should return product units for given policy`() {
+            // Given
+            val units = listOf(
+                createTestProductUnit(lastAnnivDur = 1),
+                createTestProductUnit(lastAnnivDur = 2),
+                createTestProductUnit(lastAnnivDur = 3)
+            )
+            every { mapper.findByPolicyNo("P000000001") } returns units
+
+            // When
+            val result = service.findByPolicyNo("P000000001")
+
+            // Then
+            assertEquals(3, result.size)
+            verify(exactly = 1) { mapper.findByPolicyNo("P000000001") }
+        }
+    }
 
     @Nested
     @DisplayName("findByCoverage")

@@ -1,5 +1,8 @@
 package com.vlife.cv.commission
 
+import com.github.pagehelper.PageHelper
+import com.github.pagehelper.PageInfo
+import com.vlife.cv.common.PageRequest
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_COMMISSION_RATE_BY_CLASS_CODE
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_COMMISSION_RATE_BY_SERIAL
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_COMMISSION_RATE_EFFECTIVE
@@ -143,12 +146,34 @@ class CommissionRateService(
     fun findAllCratTypes(): List<String> = mapper.findAllCratTypes()
 
     /**
-     * 依多條件搜尋佣金率
+     * 依多條件搜尋佣金率 (分頁)
      *
      * 注意：此方法不使用快取，適用於管理介面的動態查詢。
      *
      * @param query 查詢條件
-     * @return 符合條件的佣金率清單 (最多 1000 筆)
+     * @param pageRequest 分頁參數
+     * @return 分頁結果
+     */
+    fun search(query: CommissionRateQuery, pageRequest: PageRequest): PageInfo<CommissionRate> {
+        log.debug("Searching commission rates with query: {} (page: {})", query, pageRequest.pageNum)
+        return PageHelper.startPage<CommissionRate>(pageRequest.pageNum, pageRequest.pageSize)
+            .doSelectPageInfo {
+                mapper.search(
+                    commClassCode = query.commClassCode,
+                    commLineCode = query.commLineCode,
+                    cratType = query.cratType,
+                    effectiveDate = query.effectiveDate
+                )
+            }
+    }
+
+    /**
+     * 依多條件搜尋佣金率 (不分頁)
+     *
+     * 注意：此方法不使用快取，適用於管理介面的動態查詢。
+     *
+     * @param query 查詢條件
+     * @return 符合條件的佣金率清單
      */
     fun search(query: CommissionRateQuery): List<CommissionRate> {
         log.debug("Searching commission rates with query: {}", query)

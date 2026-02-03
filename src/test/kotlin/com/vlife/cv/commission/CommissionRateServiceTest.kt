@@ -14,6 +14,13 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+/**
+ * CommissionRateService 單元測試
+ *
+ * 注意：PageHelper 分頁功能使用 ThreadLocal 機制，難以在單元測試中模擬。
+ * 因此不分頁版本直接調用 Mapper，分頁版本應透過整合測試驗證。
+ * 參見 ADR-015 測試策略說明。
+ */
 @DisplayName("CommissionRateService 單元測試")
 class CommissionRateServiceTest {
 
@@ -253,6 +260,7 @@ class CommissionRateServiceTest {
 
             // Then
             assertEquals(1, result.size)
+            verify(exactly = 1) { mapper.search("12RA1", "31", "1", effectiveDate) }
         }
 
         @Test

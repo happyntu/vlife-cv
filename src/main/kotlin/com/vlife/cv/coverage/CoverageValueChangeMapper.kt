@@ -15,6 +15,8 @@ interface CoverageValueChangeMapper {
     /**
      * 依保單號碼查詢所有承保範圍
      *
+     * 注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+     *
      * @param policyNo 保單號碼
      * @return 承保範圍清單
      */
@@ -38,7 +40,6 @@ interface CoverageValueChangeMapper {
         FROM CV.CVCO
         WHERE POLICY_NO = #{policyNo}
         ORDER BY COVERAGE_NO
-        FETCH FIRST 100 ROWS ONLY
     """)
     fun findByPolicyNo(@Param("policyNo") policyNo: String): List<CoverageValueChange>
 
@@ -77,6 +78,8 @@ interface CoverageValueChangeMapper {
     /**
      * 依險種代碼查詢承保範圍
      *
+     * 注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+     *
      * @param planCode 險種代碼
      * @return 承保範圍清單
      */
@@ -100,12 +103,13 @@ interface CoverageValueChangeMapper {
         FROM CV.CVCO
         WHERE PLAN_CODE = #{planCode}
         ORDER BY POLICY_NO, COVERAGE_NO
-        FETCH FIRST 1000 ROWS ONLY
     """)
     fun findByPlanCode(@Param("planCode") planCode: String): List<CoverageValueChange>
 
     /**
      * 依承保狀態碼查詢承保範圍
+     *
+     * 注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
      *
      * @param statusCode 承保狀態碼
      * @return 承保範圍清單
@@ -130,7 +134,6 @@ interface CoverageValueChangeMapper {
         FROM CV.CVCO
         WHERE CO_STATUS_CODE = #{statusCode}
         ORDER BY PROCESS_DATE DESC
-        FETCH FIRST 1000 ROWS ONLY
     """)
     fun findByStatusCode(@Param("statusCode") statusCode: String): List<CoverageValueChange>
 

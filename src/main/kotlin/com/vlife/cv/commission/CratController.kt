@@ -244,7 +244,7 @@ class CratController(
     )
     fun refreshCache(): ResponseEntity<ApiResponse<String>> {
         service.refreshCache()
-        return ResponseEntity.ok(ApiResponse.success("Cache refreshed"))
+        return ResponseEntity.ok(ApiResponse.success(data = "Cache refreshed"))
     }
 
     private fun Crat.toResponse() = CratResponse(

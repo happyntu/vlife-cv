@@ -319,6 +319,56 @@ class CvcoControllerTest {
         }
     }
 
-    // TODO: DTO 轉換測試需要進一步調查 enum description 查找問題
-    // 已涵蓋的轉換邏輯在 getCoverageById、getDividends 等測試中驗證
+    @Nested
+    @DisplayName("DTO 轉換")
+    inner class DtoConversion {
+
+        @Test
+        fun `should convert Cvco to CvcoResponse correctly`() {
+            // Given
+            val coverage = createTestCoverage(
+                policyNo = "P000000001",
+                coverageNo = 1,
+                planCode = "12RA1",
+                statusCode = "P"  // P = ACTIVE (有效)
+            )
+            every { cvcoService.findById("P000000001", 1) } returns coverage
+
+            // When
+            val response = controller.getCoverageById("P000000001", 1)
+
+            // Then
+            val dto = response.body!!.data!!
+            assertEquals("P000000001", dto.policyNo)
+            assertEquals(1, dto.coverageNo)
+            assertEquals("12RA1", dto.planCode)
+            assertEquals("P", dto.statusCode)
+            // statusDesc 從 CoverageStatusCode enum 查找
+            assertEquals("有效", dto.statusDesc)
+        }
+
+        @Test
+        fun `should convert Cvpu to CvpuDto correctly`() {
+            // Given
+            val unit = createTestProductUnit(
+                policyNo = "P000000001",
+                coverageNo = 1,
+                lastAnnivDur = 5,
+                divDeclare = BigDecimal("1500.00"),
+                divPuaAmt = BigDecimal("750.0000")
+            )
+            every { cvpuService.findByCoverage("P000000001", 1) } returns listOf(unit)
+
+            // When
+            val response = controller.getDividends("P000000001", 1)
+
+            // Then
+            val dto = response.body!!.data!![0]
+            assertEquals("P000000001", dto.policyNo)
+            assertEquals(1, dto.coverageNo)
+            assertEquals(5, dto.lastAnnivDur)
+            assertEquals(BigDecimal("1500.00"), dto.divDeclare)
+            assertEquals(BigDecimal("750.0000"), dto.divPuaAmt)
+        }
+    }
 }

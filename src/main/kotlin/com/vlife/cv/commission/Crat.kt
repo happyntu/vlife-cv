@@ -167,3 +167,93 @@ enum class CratType(val code: String, val description: String) {
             fromCode(code) ?: throw IllegalArgumentException("Unknown CratType: $code")
     }
 }
+
+/**
+ * 佣金率新增請求 (CV004M - Insert)
+ *
+ * 對應 V3 cv004m_insert_crat 的輸入參數 (rec_cv004m1a)
+ */
+data class CratCreateRequest(
+    val commClassCode: String,
+    val commLineCode: String,
+    val cratType: String,
+    val projectNo: String? = null,
+    val startDate: LocalDate,
+    val endDate: LocalDate,
+    val cratKey1: String,
+    val cratKey2: String,
+    val commStartYear: Int? = null,
+    val commEndYear: Int? = null,
+    val commStartAge: Int? = null,
+    val commEndAge: Int? = null,
+    val commStartModx: Int? = null,
+    val commEndModx: Int? = null,
+    val commRate: BigDecimal? = null,
+    val commRateOrg: BigDecimal? = null,
+    val premLimitStart: BigDecimal? = null,
+    val premLimitEnd: BigDecimal? = null
+) {
+    init {
+        require(commClassCode.isNotBlank() && commClassCode.length <= 5) {
+            "commClassCode must be 1-5 characters"
+        }
+        require(commLineCode.isNotBlank() && commLineCode.length <= 2) {
+            "commLineCode must be 1-2 characters"
+        }
+        require(cratType.isNotBlank() && cratType.length == 1) {
+            "cratType must be exactly 1 character"
+        }
+        require(cratKey1.isNotBlank() && cratKey1.length <= 3) {
+            "cratKey1 must be 1-3 characters"
+        }
+        require(cratKey2.isNotBlank() && cratKey2.length <= 3) {
+            "cratKey2 must be 1-3 characters"
+        }
+        require(!startDate.isAfter(endDate)) {
+            "startDate must not be after endDate"
+        }
+    }
+}
+
+/**
+ * 佣金率修改請求 (CV004M - Update)
+ *
+ * 對應 V3 cv004m_update_crat 的輸入參數
+ */
+data class CratUpdateRequest(
+    val commLineCode: String? = null,
+    val cratType: String? = null,
+    val projectNo: String? = null,
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null,
+    val cratKey1: String? = null,
+    val cratKey2: String? = null,
+    val commStartYear: Int? = null,
+    val commEndYear: Int? = null,
+    val commStartAge: Int? = null,
+    val commEndAge: Int? = null,
+    val commStartModx: Int? = null,
+    val commEndModx: Int? = null,
+    val commRate: BigDecimal? = null,
+    val commRateOrg: BigDecimal? = null,
+    val premLimitStart: BigDecimal? = null,
+    val premLimitEnd: BigDecimal? = null
+) {
+    init {
+        commLineCode?.let {
+            require(it.isNotBlank() && it.length <= 2) { "commLineCode must be 1-2 characters" }
+        }
+        cratType?.let {
+            require(it.isNotBlank() && it.length == 1) { "cratType must be exactly 1 character" }
+        }
+        cratKey1?.let {
+            require(it.isNotBlank() && it.length <= 3) { "cratKey1 must be 1-3 characters" }
+        }
+        cratKey2?.let {
+            require(it.isNotBlank() && it.length <= 3) { "cratKey2 must be 1-3 characters" }
+        }
+        if (startDate != null && endDate != null) {
+            require(!startDate.isAfter(endDate)) { "startDate must not be after endDate" }
+        }
+    }
+}

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import java.math.BigDecimal
 import java.time.LocalDate
 import kotlin.test.assertEquals
@@ -282,6 +283,187 @@ class CratServiceTest {
             assertEquals(2, result.size)
         }
     }
+
+    // ==================== CUD 操作測試 (CV004M) ====================
+
+    @Nested
+    @DisplayName("create (CV004M - Insert)")
+    inner class Create {
+
+        private fun createRequest(
+            commClassCode: String = "TEST1",
+            commLineCode: String = "31",
+            cratType: String = "1"
+        ) = CratCreateRequest(
+            commClassCode = commClassCode,
+            commLineCode = commLineCode,
+            cratType = cratType,
+            startDate = LocalDate.of(2025, 1, 1),
+            endDate = LocalDate.of(2025, 12, 31),
+            cratKey1 = "010",
+            cratKey2 = "020",
+            commStartYear = 1,
+            commEndYear = 5,
+            commRate = BigDecimal("3.5")
+        )
+
+        @Test
+        fun `should create commission rate successfully`() {
+            // Given
+            val request = createRequest()
+            every { mapper.countOverlapping(any(), any(), any(), any(), any(), any(), any(), any(), null) } returns 0
+            every { mapper.nextSerial() } returns 12345L
+            every { mapper.insert(any()) } returns 1
+
+            // When
+            val result = service.create(request)
+
+            // Then
+            assertEquals(12345L, result.serial)
+            assertEquals("TEST1", result.commClassCode)
+            assertEquals("31", result.commLineCode)
+            verify(exactly = 1) { mapper.countOverlapping(any(), any(), any(), any(), any(), any(), any(), any(), null) }
+            verify(exactly = 1) { mapper.nextSerial() }
+            verify(exactly = 1) { mapper.insert(any()) }
+        }
+
+        @Test
+        fun `should throw CratOverlapException when key overlaps`() {
+            // Given
+            val request = createRequest()
+            every { mapper.countOverlapping(any(), any(), any(), any(), any(), any(), any(), any(), null) } returns 1
+
+            // When & Then
+            assertThrows<CratOverlapException> {
+                service.create(request)
+            }
+            verify(exactly = 0) { mapper.insert(any()) }
+        }
+    }
+
+    @Nested
+    @DisplayName("update (CV004M - Update)")
+    inner class Update {
+
+        @Test
+        fun `should update commission rate successfully`() {
+            // Given
+            val existing = createTestRate(serial = 100L)
+            val request = CratUpdateRequest(commRate = BigDecimal("6.0"))
+            every { mapper.findBySerial(100L) } returns existing
+            every { mapper.update(100L, request) } returns 1
+
+            // When
+            val result = service.update(100L, request)
+
+            // Then
+            assertEquals(100L, result.serial)
+            verify(exactly = 1) { mapper.update(100L, request) }
+        }
+
+        @Test
+        fun `should throw CratNotFoundException when not exists`() {
+            // Given
+            every { mapper.findBySerial(999L) } returns null
+
+            // When & Then
+            assertThrows<CratNotFoundException> {
+                service.update(999L, CratUpdateRequest(commRate = BigDecimal("6.0")))
+            }
+        }
+
+        @Test
+        fun `should check overlap when updating date range`() {
+            // Given
+            val existing = createTestRate(serial = 100L)
+            val request = CratUpdateRequest(
+                startDate = LocalDate.of(2025, 1, 1),
+                endDate = LocalDate.of(2025, 12, 31)
+            )
+            every { mapper.findBySerial(100L) } returns existing
+            every { mapper.countOverlapping(any(), any(), any(), any(), any(), any(), any(), any(), 100L) } returns 1
+
+            // When & Then
+            assertThrows<CratOverlapException> {
+                service.update(100L, request)
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("delete (CV004M - Delete)")
+    inner class Delete {
+
+        @Test
+        fun `should delete commission rate successfully`() {
+            // Given
+            every { mapper.deleteBySerial(100L) } returns 1
+
+            // When
+            service.delete(100L)
+
+            // Then
+            verify(exactly = 1) { mapper.deleteBySerial(100L) }
+        }
+
+        @Test
+        fun `should throw CratNotFoundException when not exists`() {
+            // Given
+            every { mapper.deleteBySerial(999L) } returns 0
+
+            // When & Then
+            assertThrows<CratNotFoundException> {
+                service.delete(999L)
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("hasOverlap")
+    inner class HasOverlap {
+
+        @Test
+        fun `should return true when overlap exists`() {
+            // Given
+            val request = CratCreateRequest(
+                commClassCode = "TEST1",
+                commLineCode = "31",
+                cratType = "1",
+                startDate = LocalDate.of(2025, 1, 1),
+                endDate = LocalDate.of(2025, 12, 31),
+                cratKey1 = "010",
+                cratKey2 = "020"
+            )
+            every { mapper.countOverlapping(any(), any(), any(), any(), any(), any(), any(), any(), null) } returns 2
+
+            // When
+            val result = service.hasOverlap(request)
+
+            // Then
+            assertTrue(result)
+        }
+
+        @Test
+        fun `should return false when no overlap`() {
+            // Given
+            val request = CratCreateRequest(
+                commClassCode = "TEST1",
+                commLineCode = "31",
+                cratType = "1",
+                startDate = LocalDate.of(2025, 1, 1),
+                endDate = LocalDate.of(2025, 12, 31),
+                cratKey1 = "010",
+                cratKey2 = "020"
+            )
+            every { mapper.countOverlapping(any(), any(), any(), any(), any(), any(), any(), any(), null) } returns 0
+
+            // When
+            val result = service.hasOverlap(request)
+
+            // Then
+            assertFalse(result)
+        }
+    }
 }
 
 @DisplayName("Crat 單元測試")
@@ -483,5 +665,95 @@ class CratTypeTest {
     fun `should return null for unknown type`() {
         val result = CratType.fromCode("X")
         assertNull(result)
+    }
+}
+
+@DisplayName("CratCreateRequest 驗證測試")
+class CratCreateRequestTest {
+
+    @Test
+    fun `should create valid request`() {
+        val request = CratCreateRequest(
+            commClassCode = "TEST1",
+            commLineCode = "31",
+            cratType = "1",
+            startDate = LocalDate.of(2025, 1, 1),
+            endDate = LocalDate.of(2025, 12, 31),
+            cratKey1 = "010",
+            cratKey2 = "020"
+        )
+        assertEquals("TEST1", request.commClassCode)
+    }
+
+    @Test
+    fun `should fail for blank commClassCode`() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            CratCreateRequest(
+                commClassCode = "",
+                commLineCode = "31",
+                cratType = "1",
+                startDate = LocalDate.of(2025, 1, 1),
+                endDate = LocalDate.of(2025, 12, 31),
+                cratKey1 = "010",
+                cratKey2 = "020"
+            )
+        }
+    }
+
+    @Test
+    fun `should fail for commClassCode exceeding max length`() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            CratCreateRequest(
+                commClassCode = "123456",
+                commLineCode = "31",
+                cratType = "1",
+                startDate = LocalDate.of(2025, 1, 1),
+                endDate = LocalDate.of(2025, 12, 31),
+                cratKey1 = "010",
+                cratKey2 = "020"
+            )
+        }
+    }
+
+    @Test
+    fun `should fail for start date after end date`() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            CratCreateRequest(
+                commClassCode = "TEST1",
+                commLineCode = "31",
+                cratType = "1",
+                startDate = LocalDate.of(2025, 12, 31),
+                endDate = LocalDate.of(2025, 1, 1),
+                cratKey1 = "010",
+                cratKey2 = "020"
+            )
+        }
+    }
+}
+
+@DisplayName("CratUpdateRequest 驗證測試")
+class CratUpdateRequestTest {
+
+    @Test
+    fun `should create valid update request`() {
+        val request = CratUpdateRequest(
+            commRate = BigDecimal("5.0"),
+            commLineCode = "21"
+        )
+        assertEquals(BigDecimal("5.0"), request.commRate)
+    }
+
+    @Test
+    fun `should fail for invalid commLineCode length`() {
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            CratUpdateRequest(commLineCode = "123")
+        }
+    }
+
+    @Test
+    fun `should allow null fields`() {
+        val request = CratUpdateRequest()
+        assertNull(request.commLineCode)
+        assertNull(request.commRate)
     }
 }

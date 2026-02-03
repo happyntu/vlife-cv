@@ -128,4 +128,124 @@
         WHERE COMM_CLASS_CODE = #{commClassCode}
     </select>
 
+    <!-- ==================== CUD 操作 (CV004M) ==================== -->
+
+    <!--
+        取得下一個序號
+        注意：使用 Oracle DUAL 表格和序列
+    -->
+    <select id="nextSerial" resultType="long">
+        SELECT CV.CRAT_SEQ.NEXTVAL FROM DUAL
+    </select>
+
+    <!--
+        新增佣金率 (cv004m_insert_crat)
+    -->
+    <insert id="insert">
+        INSERT INTO CV.CRAT (
+            CRAT_SERIAL,
+            COMM_CLASS_CODE,
+            COMM_LINE_CODE,
+            CRAT_TYPE,
+            PROJ_NO,
+            STR_DATE,
+            END_DATE,
+            CRAT_KEY1,
+            CRAT_KEY2,
+            COMM_START_YEAR,
+            COMM_END_YEAR,
+            COMM_START_AGE,
+            COMM_END_AGE,
+            COMM_START_MODX,
+            COMM_END_MODX,
+            COMM_RATE,
+            COMM_RATE_ORG,
+            PREM_LIMIT_STR,
+            PREM_LIMIT_END
+        ) VALUES (
+            #{serial},
+            #{commClassCode},
+            #{commLineCode},
+            #{cratType},
+            #{projectNo},
+            #{startDate},
+            #{endDate},
+            #{cratKey1},
+            #{cratKey2},
+            #{commStartYear},
+            #{commEndYear},
+            #{commStartAge},
+            #{commEndAge},
+            #{commStartModx},
+            #{commEndModx},
+            #{commRate},
+            #{commRateOrg},
+            #{premLimitStart},
+            #{premLimitEnd}
+        )
+    </insert>
+
+    <!--
+        更新佣金率 (cv004m_update_crat)
+        使用動態 SQL 只更新有值的欄位
+    -->
+    <update id="update">
+        UPDATE CV.CRAT
+        <set>
+            <if test="req.commLineCode != null">COMM_LINE_CODE = #{req.commLineCode},</if>
+            <if test="req.cratType != null">CRAT_TYPE = #{req.cratType},</if>
+            <if test="req.projectNo != null">PROJ_NO = #{req.projectNo},</if>
+            <if test="req.startDate != null">STR_DATE = #{req.startDate},</if>
+            <if test="req.endDate != null">END_DATE = #{req.endDate},</if>
+            <if test="req.cratKey1 != null">CRAT_KEY1 = #{req.cratKey1},</if>
+            <if test="req.cratKey2 != null">CRAT_KEY2 = #{req.cratKey2},</if>
+            <if test="req.commStartYear != null">COMM_START_YEAR = #{req.commStartYear},</if>
+            <if test="req.commEndYear != null">COMM_END_YEAR = #{req.commEndYear},</if>
+            <if test="req.commStartAge != null">COMM_START_AGE = #{req.commStartAge},</if>
+            <if test="req.commEndAge != null">COMM_END_AGE = #{req.commEndAge},</if>
+            <if test="req.commStartModx != null">COMM_START_MODX = #{req.commStartModx},</if>
+            <if test="req.commEndModx != null">COMM_END_MODX = #{req.commEndModx},</if>
+            <if test="req.commRate != null">COMM_RATE = #{req.commRate},</if>
+            <if test="req.commRateOrg != null">COMM_RATE_ORG = #{req.commRateOrg},</if>
+            <if test="req.premLimitStart != null">PREM_LIMIT_STR = #{req.premLimitStart},</if>
+            <if test="req.premLimitEnd != null">PREM_LIMIT_END = #{req.premLimitEnd},</if>
+        </set>
+        WHERE CRAT_SERIAL = #{serial}
+    </update>
+
+    <!--
+        刪除佣金率 (cv004m_delete_crat)
+    -->
+    <delete id="deleteBySerial">
+        DELETE FROM CV.CRAT
+        WHERE CRAT_SERIAL = #{serial}
+    </delete>
+
+    <!--
+        檢查 key 值重疊 (cv004m_check_crat_key)
+
+        檢查規則 (來自 V3 pk_cv_cv004m)：
+        - 相同 commClassCode, commLineCode, cratType, projectNo
+        - 日期範圍重疊：end_date >= 新的 start_date AND start_date <= 新的 end_date
+        - key1/key2 範圍重疊：crat_key2 >= 新的 key1 AND crat_key1 <= 新的 key2
+    -->
+    <select id="countOverlapping" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.CRAT
+        WHERE COMM_CLASS_CODE = #{commClassCode}
+          AND COMM_LINE_CODE = #{commLineCode}
+          AND CRAT_TYPE = #{cratType}
+          <choose>
+              <when test="projectNo != null">AND PROJ_NO = #{projectNo}</when>
+              <otherwise>AND PROJ_NO IS NULL</otherwise>
+          </choose>
+          AND END_DATE &gt;= #{startDate}
+          AND STR_DATE &lt;= #{endDate}
+          AND CRAT_KEY2 &gt;= #{cratKey1}
+          AND CRAT_KEY1 &lt;= #{cratKey2}
+          <if test="excludeSerial != null">
+              AND CRAT_SERIAL != #{excludeSerial}
+          </if>
+    </select>
+
 </mapper>

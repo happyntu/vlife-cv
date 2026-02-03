@@ -20,4 +20,7 @@ dependencies {
 
     // PageHelper 分頁插件 (ADR-015)
     implementation("com.github.pagehelper:pagehelper-spring-boot-starter:2.1.0")
+
+    // OpenAPI / Swagger UI (P2-8)
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
 }

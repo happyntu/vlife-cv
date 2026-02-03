@@ -3,6 +3,10 @@ package com.vlife.cv.coverage
 import com.vlife.common.response.ApiResponse
 import com.vlife.cv.common.PageRequest
 import com.vlife.cv.common.PageResponse
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Pattern
@@ -37,6 +41,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/v1/coverages")
 @Validated
+@Tag(name = "Coverages", description = "承保範圍管理 API (CV.CVCO)")
 class CvcoController(
     private val cvcoService: CvcoService,
     private val cvpuService: CvpuService
@@ -50,15 +55,18 @@ class CvcoController(
 
     /**
      * 依保單號碼查詢所有承保範圍 (分頁)
-     *
-     * @param policyNo 保單號碼 (1-10 碼)
-     * @param pageNum 頁碼 (從 1 開始，預設 1)
-     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/policy/{policyNo}")
+    @Operation(
+        summary = "依保單查詢承保範圍",
+        description = "依保單號碼查詢所有承保範圍，支援分頁。"
+    )
     fun getCoveragesByPolicy(
+        @Parameter(description = "保單號碼 (1-10 碼，僅英數字)")
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @Parameter(description = "頁碼 (從 1 開始)")
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @Parameter(description = "每頁筆數 (1-100)")
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
     ): ResponseEntity<ApiResponse<PageResponse<CvcoResponse>>> {
         val pageInfo = cvcoService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
@@ -68,13 +76,20 @@ class CvcoController(
 
     /**
      * 依主鍵查詢單筆承保範圍
-     *
-     * @param policyNo 保單號碼 (1-10 碼)
-     * @param coverageNo 承保範圍編號
      */
     @GetMapping("/{policyNo}/{coverageNo}")
+    @Operation(
+        summary = "查詢單筆承保範圍",
+        description = "依保單號碼與承保範圍編號查詢單筆承保範圍。"
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "查詢成功"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "承保範圍不存在")
+    )
     fun getCoverageById(
+        @Parameter(description = "保單號碼 (1-10 碼)")
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @Parameter(description = "承保範圍編號")
         @PathVariable @Min(0) coverageNo: Int
     ): ResponseEntity<ApiResponse<CvcoResponse?>> {
         val coverage = cvcoService.findById(policyNo, coverageNo)
@@ -94,15 +109,18 @@ class CvcoController(
 
     /**
      * 依險種代碼查詢承保範圍 (分頁)
-     *
-     * @param planCode 險種代碼 (1-5 碼)
-     * @param pageNum 頁碼 (從 1 開始，預設 1)
-     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/plan/{planCode}")
+    @Operation(
+        summary = "依險種查詢承保範圍",
+        description = "依險種代碼查詢所有承保範圍，支援分頁。"
+    )
     fun getCoveragesByPlanCode(
+        @Parameter(description = "險種代碼 (1-5 碼)")
         @PathVariable @Size(min = 1, max = MAX_PLAN_CODE_LENGTH) planCode: String,
+        @Parameter(description = "頁碼 (從 1 開始)")
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @Parameter(description = "每頁筆數 (1-100)")
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
     ): ResponseEntity<ApiResponse<PageResponse<CvcoResponse>>> {
         val pageInfo = cvcoService.findByPlanCode(planCode, PageRequest(pageNum, pageSize))
@@ -112,15 +130,18 @@ class CvcoController(
 
     /**
      * 依承保狀態碼查詢承保範圍 (分頁)
-     *
-     * @param statusCode 承保狀態碼 (1 碼)
-     * @param pageNum 頁碼 (從 1 開始，預設 1)
-     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/status/{statusCode}")
+    @Operation(
+        summary = "依狀態查詢承保範圍",
+        description = "依承保狀態碼查詢所有承保範圍，支援分頁。"
+    )
     fun getCoveragesByStatus(
+        @Parameter(description = "承保狀態碼 (1 碼)")
         @PathVariable @Size(min = 1, max = MAX_STATUS_CODE_LENGTH) statusCode: String,
+        @Parameter(description = "頁碼 (從 1 開始)")
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @Parameter(description = "每頁筆數 (1-100)")
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
     ): ResponseEntity<ApiResponse<PageResponse<CvcoResponse>>> {
         val pageInfo = cvcoService.findByStatusCode(statusCode, PageRequest(pageNum, pageSize))
@@ -132,6 +153,10 @@ class CvcoController(
      * 查詢所有不重複的險種代碼
      */
     @GetMapping("/plan-codes")
+    @Operation(
+        summary = "列出所有險種代碼",
+        description = "取得資料庫中所有不重複的險種代碼清單。"
+    )
     fun getAllPlanCodes(): ResponseEntity<ApiResponse<List<String>>> {
         val planCodes = cvcoService.findAllPlanCodes()
         return ResponseEntity.ok(ApiResponse.success(planCodes))
@@ -139,13 +164,17 @@ class CvcoController(
 
     /**
      * 查詢指定承保範圍的紅利分配記錄
-     *
-     * @param policyNo 保單號碼 (1-10 碼)
-     * @param coverageNo 承保範圍編號
      */
     @GetMapping("/{policyNo}/{coverageNo}/dividends")
+    @Tag(name = "Product Units", description = "紅利分配管理 API (CV.CVPU)")
+    @Operation(
+        summary = "查詢紅利分配記錄",
+        description = "查詢指定承保範圍的所有紅利分配記錄。"
+    )
     fun getDividends(
+        @Parameter(description = "保單號碼 (1-10 碼)")
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @Parameter(description = "承保範圍編號")
         @PathVariable @Min(0) coverageNo: Int
     ): ResponseEntity<ApiResponse<List<CvpuResponse>>> {
         val productUnits = cvpuService.findByCoverage(policyNo, coverageNo)
@@ -155,13 +184,17 @@ class CvcoController(
 
     /**
      * 查詢指定承保範圍的紅利摘要
-     *
-     * @param policyNo 保單號碼 (1-10 碼)
-     * @param coverageNo 承保範圍編號
      */
     @GetMapping("/{policyNo}/{coverageNo}/dividend-summary")
+    @Tag(name = "Product Units", description = "紅利分配管理 API (CV.CVPU)")
+    @Operation(
+        summary = "查詢紅利摘要",
+        description = "查詢指定承保範圍的紅利摘要統計，包含總紅利宣告金額、總增額繳清保額等。"
+    )
     fun getDividendSummary(
+        @Parameter(description = "保單號碼 (1-10 碼)")
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @Parameter(description = "承保範圍編號")
         @PathVariable @Min(0) coverageNo: Int
     ): ResponseEntity<ApiResponse<DividendSummaryResponse>> {
         val summary = cvpuService.getDividendSummary(policyNo, coverageNo)
@@ -170,15 +203,19 @@ class CvcoController(
 
     /**
      * 依保單號碼查詢所有紅利分配記錄 (分頁)
-     *
-     * @param policyNo 保單號碼 (1-10 碼)
-     * @param pageNum 頁碼 (從 1 開始，預設 1)
-     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/policy/{policyNo}/dividends")
+    @Tag(name = "Product Units", description = "紅利分配管理 API (CV.CVPU)")
+    @Operation(
+        summary = "依保單查詢紅利分配",
+        description = "依保單號碼查詢所有紅利分配記錄，支援分頁。"
+    )
     fun getDividendsByPolicy(
+        @Parameter(description = "保單號碼 (1-10 碼)")
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @Parameter(description = "頁碼 (從 1 開始)")
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @Parameter(description = "每頁筆數 (1-100)")
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
     ): ResponseEntity<ApiResponse<PageResponse<CvpuResponse>>> {
         val pageInfo = cvpuService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))

@@ -303,7 +303,25 @@ class CratControllerTest {
         }
     }
 
-    // TODO: refreshCache 測試需要進一步調查 ApiResponse<String> 序列化問題
+    @Nested
+    @DisplayName("refreshCache")
+    inner class RefreshCache {
+
+        @Test
+        fun `should refresh cache and return success message`() {
+            // Given
+            every { service.refreshCache() } just Runs
+
+            // When
+            val response = controller.refreshCache()
+
+            // Then
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(200, response.body!!.code)
+            assertEquals("Cache refreshed", response.body!!.data)
+            verify(exactly = 1) { service.refreshCache() }
+        }
+    }
 
     @Nested
     @DisplayName("DTO 轉換")

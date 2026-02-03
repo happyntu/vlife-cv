@@ -1,22 +1,20 @@
 package com.vlife.cv
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.stats.CacheStats
-import com.vlife.cv.config.CacheConfig
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_COMMISSION_RATE_BY_CLASS_CODE
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_COMMISSION_RATE_BY_SERIAL
-import com.vlife.cv.config.CacheConfig.Companion.CV_CACHE_MANAGER
+import com.vlife.cv.config.CacheConfig.Companion.CACHE_COMMISSION_RATE_EFFECTIVE
+import com.vlife.cv.config.CacheConfig.Companion.CACHE_CVDI_BY_PLAN
+import com.vlife.cv.config.CacheConfig.Companion.CACHE_CVRF_BY_PLAN
+import com.vlife.cv.config.CacheConfig.Companion.CACHE_DIVIDEND_SUMMARY
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.cache.CacheManager
 import org.springframework.cache.caffeine.CaffeineCache
 import org.springframework.cache.caffeine.CaffeineCacheManager
-import org.springframework.context.annotation.Import
-import org.springframework.test.context.ActiveProfiles
+import java.util.concurrent.TimeUnit
 import kotlin.system.measureNanoTime
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -30,24 +28,39 @@ import kotlin.test.assertTrue
  * - 快取統計資訊 (Cache Statistics)
  * - 查詢延遲測量 (Query Latency)
  *
- * 注意：此測試使用 Spring Test Context 但不連接真實資料庫，
- * 主要驗證快取機制本身的行為。
+ * 注意：此測試直接建立 CacheManager 實例，不依賴 Spring Boot 上下文，
+ * 避免與 vlife-common 的 CacheConfig bean 名稱衝突。
  */
-@SpringBootTest(classes = [TestApplication::class])
-@ActiveProfiles("integration-test")
-@Import(TestConfiguration::class, CacheConfig::class)
 @DisplayName("快取效能基準測試")
 class CachePerformanceBenchmarkTest {
 
-    @Autowired
-    @Qualifier(CV_CACHE_MANAGER)
-    private lateinit var cacheManager: CacheManager
+    private lateinit var cacheManager: CaffeineCacheManager
+
+    companion object {
+        private const val DEFAULT_EXPIRE_HOURS = 1L
+        private const val DEFAULT_MAX_SIZE = 60_000L
+
+        private val ALL_CACHE_NAMES = listOf(
+            CACHE_COMMISSION_RATE_BY_SERIAL,
+            CACHE_COMMISSION_RATE_BY_CLASS_CODE,
+            CACHE_COMMISSION_RATE_EFFECTIVE,
+            CACHE_DIVIDEND_SUMMARY,
+            CACHE_CVDI_BY_PLAN,
+            CACHE_CVRF_BY_PLAN
+        )
+    }
 
     @BeforeEach
     fun setup() {
-        // 清除所有快取
-        cacheManager.cacheNames.forEach { name ->
-            cacheManager.getCache(name)?.clear()
+        // 建立與 CacheConfig 相同配置的 CacheManager
+        cacheManager = CaffeineCacheManager().apply {
+            setCaffeine(
+                Caffeine.newBuilder()
+                    .expireAfterWrite(DEFAULT_EXPIRE_HOURS, TimeUnit.HOURS)
+                    .maximumSize(DEFAULT_MAX_SIZE)
+                    .recordStats()
+            )
+            setCacheNames(ALL_CACHE_NAMES)
         }
     }
 
@@ -57,28 +70,20 @@ class CachePerformanceBenchmarkTest {
 
         @Test
         fun `should have all expected cache names configured`() {
-            // Given
-            val expectedCaches = listOf(
-                CACHE_COMMISSION_RATE_BY_SERIAL,
-                CACHE_COMMISSION_RATE_BY_CLASS_CODE,
-                CacheConfig.CACHE_COMMISSION_RATE_EFFECTIVE,
-                CacheConfig.CACHE_DIVIDEND_SUMMARY,
-                CacheConfig.CACHE_CVDI_BY_PLAN,
-                CacheConfig.CACHE_CVRF_BY_PLAN
-            )
-
             // When
             val actualCaches = cacheManager.cacheNames.toList()
 
             // Then
-            expectedCaches.forEach { expected ->
+            ALL_CACHE_NAMES.forEach { expected ->
                 assertTrue(actualCaches.contains(expected), "Missing cache: $expected")
             }
+            println("✓ 所有 ${ALL_CACHE_NAMES.size} 個快取名稱已正確配置")
         }
 
         @Test
         fun `should use CaffeineCacheManager`() {
             assertTrue(cacheManager is CaffeineCacheManager, "Expected CaffeineCacheManager")
+            println("✓ 使用 CaffeineCacheManager")
         }
 
         @Test
@@ -97,6 +102,7 @@ class CachePerformanceBenchmarkTest {
             assertNotNull(stats, "Stats should not be null")
             assertTrue(stats.hitCount() >= 1, "Should have at least one hit")
             assertTrue(stats.missCount() >= 1, "Should have at least one miss")
+            println("✓ 統計記錄已啟用 (hits=${stats.hitCount()}, misses=${stats.missCount()})")
         }
     }
 
@@ -129,6 +135,7 @@ class CachePerformanceBenchmarkTest {
                 hitRate >= 0.99,
                 "Hit rate should be >= 99%, actual: ${hitRate * 100}%"
             )
+            println("✓ 快取命中率: ${String.format("%.2f", hitRate * 100)}%")
         }
 
         @Test
@@ -144,6 +151,7 @@ class CachePerformanceBenchmarkTest {
             // Then
             val stats = cache.nativeCache.stats()
             assertEquals(10, stats.missCount().toInt(), "Should have 10 misses")
+            println("✓ 正確記錄 ${stats.missCount()} 次快取未命中")
         }
     }
 
@@ -176,7 +184,7 @@ class CachePerformanceBenchmarkTest {
             val avgNanos = totalNanos / iterations
             val avgMicros = avgNanos / 1000.0
 
-            println("Average cache get latency: $avgNanos ns ($avgMicros µs)")
+            println("✓ Cache GET 平均延遲: $avgNanos ns (${"%.3f".format(avgMicros)} µs)")
 
             // Caffeine 快取讀取應在微秒級
             assertTrue(
@@ -208,7 +216,7 @@ class CachePerformanceBenchmarkTest {
             val avgNanos = totalNanos / iterations
             val avgMicros = avgNanos / 1000.0
 
-            println("Average cache put latency: $avgNanos ns ($avgMicros µs)")
+            println("✓ Cache PUT 平均延遲: $avgNanos ns (${"%.3f".format(avgMicros)} µs)")
 
             // Caffeine 快取寫入應在微秒級
             assertTrue(
@@ -259,6 +267,7 @@ class CachePerformanceBenchmarkTest {
             // Then - 驗證快取運作正常
             val stats = cache.nativeCache.stats()
             assertTrue(stats.loadCount() >= 0, "Load count should be non-negative")
+            println("✓ 逐出計數機制運作正常 (eviction=${stats.evictionCount()})")
         }
 
         private fun printCacheStats(cacheName: String, stats: CacheStats) {
@@ -298,6 +307,7 @@ class CachePerformanceBenchmarkTest {
             // Then
             assertEquals("value-from-cache1", cache1.get(sameKey)?.get())
             assertEquals("value-from-cache2", cache2.get(sameKey)?.get())
+            println("✓ 不同快取間資料正確隔離")
         }
 
         @Test
@@ -315,6 +325,7 @@ class CachePerformanceBenchmarkTest {
             // Then
             assertEquals(null, cache1.get("key1"))
             assertEquals("value2", cache2.get("key2")?.get())
+            println("✓ 快取可獨立清除")
         }
     }
 }

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    CvdiMapper - 紅利分配水準檔 MyBatis Mapper
+
+    遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
+    遵循 ADR-016 規範，SQL 集中於 XML 管理。
+    遵循 ADR-017 規範，Mapper 名稱對應資料庫表格名稱 (CVDI)。
+
+    對應 V3 的 CVDI 表格。
+-->
+<mapper namespace="com.vlife.cv.actuarial.CvdiMapper">
+
+    <!-- SQL 片段：紅利分配水準欄位對應 -->
+    <sql id="cvdiColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        PAID_STATUS as paidStatus,
+        RATE_SEX as rateSex,
+        AGE_LIMIT_STR as ageLimitStart,
+        AGE_LIMIT_END as ageLimitEnd,
+        FACE_AMT_STR as faceAmtStart,
+        FACE_AMT_END as faceAmtEnd,
+        MODE_PREM_S as modePremStart,
+        MODE_PREM_E as modePremEnd,
+        POLICY_YEAR as policyYear,
+        DECL_DATE as declareDate,
+        RATE_RATIO as rateRatio,
+        DEATH_RATIO as deathRatio,
+        LOADING_RATIO as loadingRatio,
+        REWARD_RATIO as rewardRatio,
+        DEATH_1_RATIO as death1Ratio,
+        DEATH_2_RATIO as death2Ratio,
+        RATIO_FEE as ratioFee,
+        FIX_FEE as fixFee,
+        DET_BIR_RATE as detBirRate,
+        CONFIRM_FLAG as confirmFlag,
+        CONFIRM_OPER as confirmOper,
+        CONFIRM_DATE as confirmDate,
+        AVERAGE_DISCOUNT as averageDiscount
+    </sql>
+
+    <!--
+        依險種代碼和版本查詢所有紅利分配水準
+    -->
+    <select id="findByPlanCode" resultType="com.vlife.cv.actuarial.Cvdi">
+        SELECT <include refid="cvdiColumns"/>
+        FROM CV.CVDI
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+        ORDER BY POLICY_YEAR, DECL_DATE
+    </select>
+
+    <!--
+        依險種、繳費狀態查詢紅利分配水準
+    -->
+    <select id="findByPlanCodeAndPaidStatus" resultType="com.vlife.cv.actuarial.Cvdi">
+        SELECT <include refid="cvdiColumns"/>
+        FROM CV.CVDI
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND PAID_STATUS = #{paidStatus}
+        ORDER BY POLICY_YEAR, DECL_DATE
+    </select>
+
+    <!--
+        依條件查詢符合的紅利分配水準
+
+        查詢落在指定年齡、保額、保費範圍內的紅利分配參數
+    -->
+    <select id="findByCondition" resultType="com.vlife.cv.actuarial.Cvdi">
+        SELECT <include refid="cvdiColumns"/>
+        FROM CV.CVDI
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND PAID_STATUS = #{paidStatus}
+          AND RATE_SEX = #{rateSex}
+          AND AGE_LIMIT_STR &lt;= #{age}
+          AND AGE_LIMIT_END &gt;= #{age}
+          AND FACE_AMT_STR &lt;= #{faceAmt}
+          AND FACE_AMT_END &gt;= #{faceAmt}
+          AND MODE_PREM_S &lt;= #{modePrem}
+          AND MODE_PREM_E &gt;= #{modePrem}
+          AND POLICY_YEAR = #{policyYear}
+          AND DECL_DATE = #{declareDate}
+        FETCH FIRST 1 ROW ONLY
+    </select>
+
+    <!--
+        查詢所有不重複的險種代碼
+    -->
+    <select id="findAllPlanCodes" resultType="java.lang.String">
+        SELECT DISTINCT PLAN_CODE
+        FROM CV.CVDI
+        ORDER BY PLAN_CODE
+    </select>
+
+    <!--
+        依險種查詢所有宣告日期
+    -->
+    <select id="findDeclareDates" resultType="java.time.LocalDate">
+        SELECT DISTINCT DECL_DATE
+        FROM CV.CVDI
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+        ORDER BY DECL_DATE
+    </select>
+
+    <!--
+        計算指定險種的紅利分配水準數量
+    -->
+    <select id="countByPlanCode" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.CVDI
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+    </select>
+
+</mapper>

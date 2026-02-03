@@ -1,5 +1,8 @@
 package com.vlife.cv.coverage
 
+import com.github.pagehelper.PageHelper
+import com.github.pagehelper.PageInfo
+import com.vlife.cv.common.PageRequest
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_DIVIDEND_SUMMARY
 import com.vlife.cv.config.CacheConfig.Companion.CV_CACHE_MANAGER
 import org.slf4j.LoggerFactory
@@ -26,7 +29,23 @@ class ProductUnitService(
     private val log = LoggerFactory.getLogger(javaClass)
 
     /**
-     * 依保單號碼查詢所有紅利分配記錄
+     * 依保單號碼查詢所有紅利分配記錄 (分頁)
+     *
+     * @param policyNo 保單號碼
+     * @param pageRequest 分頁參數
+     * @return 分頁結果
+     */
+    fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<ProductUnit> {
+        require(policyNo.isNotBlank() && policyNo.length <= 10) {
+            "policyNo must be non-blank and at most 10 characters"
+        }
+        log.debug("Finding product units for policy: {} (page: {})", policyNo, pageRequest.pageNum)
+        return PageHelper.startPage<ProductUnit>(pageRequest.pageNum, pageRequest.pageSize)
+            .doSelectPageInfo { mapper.findByPolicyNo(policyNo) }
+    }
+
+    /**
+     * 依保單號碼查詢所有紅利分配記錄 (不分頁)
      *
      * @param policyNo 保單號碼
      * @return 紅利分配清單

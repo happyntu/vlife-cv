@@ -1,6 +1,8 @@
 package com.vlife.cv.commission
 
 import com.vlife.common.response.ApiResponse
+import com.vlife.cv.common.PageRequest
+import com.vlife.cv.common.PageResponse
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Size
@@ -45,28 +47,32 @@ class CommissionRateController(
     }
 
     /**
-     * 搜尋佣金率
+     * 搜尋佣金率 (分頁)
      *
      * @param commClassCode 佣金率類別碼 (可選，最長 5 碼)
      * @param commLineCode 業務線代號 (可選，最長 2 碼)
      * @param cratType 佣金率型態 (可選，1 碼)
      * @param effectiveDate 生效日期 (可選，格式 yyyy-MM-dd)
+     * @param pageNum 頁碼 (從 1 開始，預設 1)
+     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping
     fun search(
         @RequestParam(required = false) @Size(max = MAX_CLASS_CODE_LENGTH) commClassCode: String?,
         @RequestParam(required = false) @Size(max = MAX_LINE_CODE_LENGTH) commLineCode: String?,
         @RequestParam(required = false) @Size(max = MAX_CRAT_TYPE_LENGTH) cratType: String?,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) effectiveDate: LocalDate?
-    ): ResponseEntity<ApiResponse<List<CommissionRateResponse>>> {
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) effectiveDate: LocalDate?,
+        @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
+    ): ResponseEntity<ApiResponse<PageResponse<CommissionRateResponse>>> {
         val query = CommissionRateQuery(
             commClassCode = commClassCode,
             commLineCode = commLineCode,
             cratType = cratType,
             effectiveDate = effectiveDate
         )
-        val rates = service.search(query)
-        val response = rates.map { it.toResponse() }
+        val pageInfo = service.search(query, PageRequest(pageNum, pageSize))
+        val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

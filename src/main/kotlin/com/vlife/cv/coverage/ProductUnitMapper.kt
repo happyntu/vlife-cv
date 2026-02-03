@@ -16,6 +16,8 @@ interface ProductUnitMapper {
     /**
      * 依保單號碼查詢所有紅利分配記錄
      *
+     * 注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+     *
      * @param policyNo 保單號碼
      * @return 紅利分配清單
      */
@@ -39,7 +41,6 @@ interface ProductUnitMapper {
         FROM CV.CVPU
         WHERE POLICY_NO = #{policyNo}
         ORDER BY COVERAGE_NO, LAST_ANNIV_DUR
-        FETCH FIRST 100 ROWS ONLY
     """)
     fun findByPolicyNo(@Param("policyNo") policyNo: String): List<ProductUnit>
 

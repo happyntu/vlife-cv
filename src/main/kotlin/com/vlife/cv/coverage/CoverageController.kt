@@ -1,6 +1,9 @@
 package com.vlife.cv.coverage
 
 import com.vlife.common.response.ApiResponse
+import com.vlife.cv.common.PageRequest
+import com.vlife.cv.common.PageResponse
+import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
@@ -43,16 +46,20 @@ class CoverageController(
     }
 
     /**
-     * 依保單號碼查詢所有承保範圍
+     * 依保單號碼查詢所有承保範圍 (分頁)
      *
      * @param policyNo 保單號碼 (1-10 碼)
+     * @param pageNum 頁碼 (從 1 開始，預設 1)
+     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/policy/{policyNo}")
     fun getCoveragesByPolicy(
-        @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String
-    ): ResponseEntity<ApiResponse<List<CoverageResponse>>> {
-        val coverages = coverageService.findByPolicyNo(policyNo)
-        val response = coverages.map { it.toResponse() }
+        @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
+    ): ResponseEntity<ApiResponse<PageResponse<CoverageResponse>>> {
+        val pageInfo = coverageService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
+        val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -83,30 +90,38 @@ class CoverageController(
     }
 
     /**
-     * 依險種代碼查詢承保範圍
+     * 依險種代碼查詢承保範圍 (分頁)
      *
      * @param planCode 險種代碼 (1-5 碼)
+     * @param pageNum 頁碼 (從 1 開始，預設 1)
+     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/plan/{planCode}")
     fun getCoveragesByPlanCode(
-        @PathVariable @Size(min = 1, max = MAX_PLAN_CODE_LENGTH) planCode: String
-    ): ResponseEntity<ApiResponse<List<CoverageResponse>>> {
-        val coverages = coverageService.findByPlanCode(planCode)
-        val response = coverages.map { it.toResponse() }
+        @PathVariable @Size(min = 1, max = MAX_PLAN_CODE_LENGTH) planCode: String,
+        @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
+    ): ResponseEntity<ApiResponse<PageResponse<CoverageResponse>>> {
+        val pageInfo = coverageService.findByPlanCode(planCode, PageRequest(pageNum, pageSize))
+        val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
     /**
-     * 依承保狀態碼查詢承保範圍
+     * 依承保狀態碼查詢承保範圍 (分頁)
      *
      * @param statusCode 承保狀態碼 (1 碼)
+     * @param pageNum 頁碼 (從 1 開始，預設 1)
+     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/status/{statusCode}")
     fun getCoveragesByStatus(
-        @PathVariable @Size(min = 1, max = MAX_STATUS_CODE_LENGTH) statusCode: String
-    ): ResponseEntity<ApiResponse<List<CoverageResponse>>> {
-        val coverages = coverageService.findByStatusCode(statusCode)
-        val response = coverages.map { it.toResponse() }
+        @PathVariable @Size(min = 1, max = MAX_STATUS_CODE_LENGTH) statusCode: String,
+        @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
+    ): ResponseEntity<ApiResponse<PageResponse<CoverageResponse>>> {
+        val pageInfo = coverageService.findByStatusCode(statusCode, PageRequest(pageNum, pageSize))
+        val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -151,16 +166,20 @@ class CoverageController(
     }
 
     /**
-     * 依保單號碼查詢所有紅利分配記錄
+     * 依保單號碼查詢所有紅利分配記錄 (分頁)
      *
      * @param policyNo 保單號碼 (1-10 碼)
+     * @param pageNum 頁碼 (從 1 開始，預設 1)
+     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping("/policy/{policyNo}/dividends")
     fun getDividendsByPolicy(
-        @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String
-    ): ResponseEntity<ApiResponse<List<ProductUnitResponse>>> {
-        val productUnits = productUnitService.findByPolicyNo(policyNo)
-        val response = productUnits.map { it.toResponse() }
+        @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
+        @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
+    ): ResponseEntity<ApiResponse<PageResponse<ProductUnitResponse>>> {
+        val pageInfo = productUnitService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
+        val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 

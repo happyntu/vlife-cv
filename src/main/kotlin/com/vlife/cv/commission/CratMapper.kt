@@ -93,4 +93,73 @@ interface CratMapper {
      * @return 資料筆數
      */
     fun countByClassCode(@Param("commClassCode") commClassCode: String): Int
+
+    // ==================== CUD 操作 (CV004M) ====================
+
+    /**
+     * 取得下一個序號 (從序列產生)
+     *
+     * @return 新的序號
+     */
+    fun nextSerial(): Long
+
+    /**
+     * 新增佣金率
+     *
+     * 對應 V3 cv004m_insert_crat
+     *
+     * @param crat 佣金率資料
+     * @return 影響的資料筆數
+     */
+    fun insert(crat: Crat): Int
+
+    /**
+     * 更新佣金率
+     *
+     * 對應 V3 cv004m_update_crat
+     *
+     * @param serial 序號 (主鍵)
+     * @param request 更新請求
+     * @return 影響的資料筆數
+     */
+    fun update(@Param("serial") serial: Long, @Param("req") request: CratUpdateRequest): Int
+
+    /**
+     * 刪除佣金率
+     *
+     * 對應 V3 cv004m_delete_crat
+     *
+     * @param serial 序號 (主鍵)
+     * @return 影響的資料筆數
+     */
+    fun deleteBySerial(@Param("serial") serial: Long): Int
+
+    /**
+     * 檢查 key 值重疊
+     *
+     * 對應 V3 cv004m_check_crat_key
+     * 用於新增/更新前檢查是否有重疊的佣金率設定
+     *
+     * @param commClassCode 佣金率類別碼
+     * @param commLineCode 業務線代號
+     * @param cratType 佣金率型態
+     * @param projectNo 專案號碼
+     * @param startDate 生效起日
+     * @param endDate 生效迄日
+     * @param cratKey1 佣金鍵值1
+     * @param cratKey2 佣金鍵值2
+     * @param excludeSerial 排除的序號 (更新時排除自己)
+     * @return 重疊的資料筆數
+     */
+    fun countOverlapping(
+        @Param("commClassCode") commClassCode: String,
+        @Param("commLineCode") commLineCode: String,
+        @Param("cratType") cratType: String,
+        @Param("projectNo") projectNo: String?,
+        @Param("startDate") startDate: LocalDate,
+        @Param("endDate") endDate: LocalDate,
+        @Param("cratKey1") cratKey1: String,
+        @Param("cratKey2") cratKey2: String,
+        @Param("excludeSerial") excludeSerial: Long? = null
+    ): Int
 }

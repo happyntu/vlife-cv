@@ -225,4 +225,197 @@ class CratService(
     fun refreshCache() {
         log.info("Commission rate cache cleared")
     }
+
+    // ==================== CUD 操作 (CV004M) ====================
+
+    /**
+     * 新增佣金率
+     *
+     * 對應 V3 cv004m_insert_crat
+     * 新增前會檢查 key 值是否重疊。
+     *
+     * @param request 新增請求
+     * @return 新建立的佣金率
+     * @throws CratOverlapException 若 key 值重疊
+     */
+    @CacheEvict(
+        value = [
+            CACHE_COMMISSION_RATE_BY_CLASS_CODE,
+            CACHE_COMMISSION_RATE_EFFECTIVE
+        ],
+        allEntries = true,
+        cacheManager = CV_CACHE_MANAGER
+    )
+    fun create(request: CratCreateRequest): Crat {
+        log.info("Creating commission rate: classCode={}, lineCode={}", request.commClassCode, request.commLineCode)
+
+        // 檢查 key 值重疊 (對應 cv004m_check_crat_key)
+        val overlapCount = mapper.countOverlapping(
+            commClassCode = request.commClassCode,
+            commLineCode = request.commLineCode,
+            cratType = request.cratType,
+            projectNo = request.projectNo,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            cratKey1 = request.cratKey1,
+            cratKey2 = request.cratKey2
+        )
+        if (overlapCount > 0) {
+            throw CratOverlapException(
+                "Commission rate key overlap detected: $overlapCount overlapping records"
+            )
+        }
+
+        // 取得新序號
+        val serial = mapper.nextSerial()
+
+        // 建立 Entity
+        val crat = Crat(
+            serial = serial,
+            commClassCode = request.commClassCode,
+            commLineCode = request.commLineCode,
+            cratType = request.cratType,
+            projectNo = request.projectNo,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            cratKey1 = request.cratKey1,
+            cratKey2 = request.cratKey2,
+            commStartYear = request.commStartYear,
+            commEndYear = request.commEndYear,
+            commStartAge = request.commStartAge,
+            commEndAge = request.commEndAge,
+            commStartModx = request.commStartModx,
+            commEndModx = request.commEndModx,
+            commRate = request.commRate,
+            commRateOrg = request.commRateOrg,
+            premLimitStart = request.premLimitStart,
+            premLimitEnd = request.premLimitEnd
+        )
+
+        // 寫入資料庫
+        mapper.insert(crat)
+        log.info("Commission rate created: serial={}", serial)
+
+        return crat
+    }
+
+    /**
+     * 更新佣金率
+     *
+     * 對應 V3 cv004m_update_crat
+     *
+     * @param serial 序號 (主鍵)
+     * @param request 更新請求
+     * @return 更新後的佣金率
+     * @throws CratNotFoundException 若佣金率不存在
+     */
+    @CacheEvict(
+        value = [
+            CACHE_COMMISSION_RATE_BY_SERIAL,
+            CACHE_COMMISSION_RATE_BY_CLASS_CODE,
+            CACHE_COMMISSION_RATE_EFFECTIVE
+        ],
+        allEntries = true,
+        cacheManager = CV_CACHE_MANAGER
+    )
+    fun update(serial: Long, request: CratUpdateRequest): Crat {
+        log.info("Updating commission rate: serial={}", serial)
+
+        // 檢查是否存在
+        val existing = mapper.findBySerial(serial)
+            ?: throw CratNotFoundException("Commission rate not found: $serial")
+
+        // 若有更新日期或 key，需要檢查重疊
+        if (request.startDate != null || request.endDate != null ||
+            request.cratKey1 != null || request.cratKey2 != null) {
+
+            val overlapCount = mapper.countOverlapping(
+                commClassCode = existing.commClassCode,
+                commLineCode = request.commLineCode ?: existing.commLineCode,
+                cratType = request.cratType ?: existing.cratType,
+                projectNo = request.projectNo ?: existing.projectNo,
+                startDate = request.startDate ?: existing.startDate,
+                endDate = request.endDate ?: existing.endDate,
+                cratKey1 = request.cratKey1 ?: existing.cratKey1,
+                cratKey2 = request.cratKey2 ?: existing.cratKey2,
+                excludeSerial = serial
+            )
+            if (overlapCount > 0) {
+                throw CratOverlapException(
+                    "Commission rate key overlap detected: $overlapCount overlapping records"
+                )
+            }
+        }
+
+        // 執行更新
+        val updated = mapper.update(serial, request)
+        if (updated == 0) {
+            throw CratNotFoundException("Commission rate not found: $serial")
+        }
+
+        log.info("Commission rate updated: serial={}", serial)
+
+        // 回傳更新後的資料
+        return mapper.findBySerial(serial)
+            ?: throw CratNotFoundException("Commission rate not found after update: $serial")
+    }
+
+    /**
+     * 刪除佣金率
+     *
+     * 對應 V3 cv004m_delete_crat
+     *
+     * @param serial 序號 (主鍵)
+     * @throws CratNotFoundException 若佣金率不存在
+     */
+    @CacheEvict(
+        value = [
+            CACHE_COMMISSION_RATE_BY_SERIAL,
+            CACHE_COMMISSION_RATE_BY_CLASS_CODE,
+            CACHE_COMMISSION_RATE_EFFECTIVE
+        ],
+        allEntries = true,
+        cacheManager = CV_CACHE_MANAGER
+    )
+    fun delete(serial: Long) {
+        log.info("Deleting commission rate: serial={}", serial)
+
+        val deleted = mapper.deleteBySerial(serial)
+        if (deleted == 0) {
+            throw CratNotFoundException("Commission rate not found: $serial")
+        }
+
+        log.info("Commission rate deleted: serial={}", serial)
+    }
+
+    /**
+     * 檢查 key 值是否重疊
+     *
+     * 對應 V3 cv004m_check_crat_key
+     *
+     * @param request 新增請求
+     * @return true 若有重疊
+     */
+    fun hasOverlap(request: CratCreateRequest): Boolean {
+        return mapper.countOverlapping(
+            commClassCode = request.commClassCode,
+            commLineCode = request.commLineCode,
+            cratType = request.cratType,
+            projectNo = request.projectNo,
+            startDate = request.startDate,
+            endDate = request.endDate,
+            cratKey1 = request.cratKey1,
+            cratKey2 = request.cratKey2
+        ) > 0
+    }
 }
+
+/**
+ * 佣金率不存在例外
+ */
+class CratNotFoundException(message: String) : RuntimeException(message)
+
+/**
+ * 佣金率 key 值重疊例外
+ */
+class CratOverlapException(message: String) : RuntimeException(message)

@@ -15,9 +15,12 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
@@ -39,6 +42,9 @@ import java.time.LocalDate
  * - GET /api/v1/commission-rates/effective          - 查詢有效佣金率
  * - GET /api/v1/commission-rates/line-codes         - 列出所有業務線代號
  * - GET /api/v1/commission-rates/crat-types         - 列出所有佣金率型態
+ * - POST /api/v1/commission-rates                   - 新增佣金率 (CV004M)
+ * - PUT /api/v1/commission-rates/{serial}           - 修改佣金率 (CV004M)
+ * - DELETE /api/v1/commission-rates/{serial}        - 刪除佣金率 (CV004M)
  * - POST /api/v1/commission-rates/refresh           - 刷新快取
  */
 @RestController
@@ -221,6 +227,120 @@ class CratController(
     ): ResponseEntity<ApiResponse<List<String>>> {
         val classCodes = service.findClassCodesByLineCode(lineCode)
         return ResponseEntity.ok(ApiResponse.success(classCodes))
+    }
+
+    // ==================== CUD 操作 (CV004M) ====================
+
+    /**
+     * 新增佣金率 (CV004M - Insert)
+     */
+    @PostMapping
+    @Operation(
+        summary = "新增佣金率",
+        description = """新增佣金率資料。對應 V3 CV004M 作業的新增功能。
+
+新增前會檢查 key 值是否重疊（類別碼、業務線、型態、日期範圍、年期範圍）。
+若有重疊會回傳 409 Conflict。"""
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "新增成功"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "請求格式錯誤"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Key 值重疊")
+    )
+    fun create(
+        @RequestBody @Validated request: CratCreateRequest
+    ): ResponseEntity<ApiResponse<CratResponse>> {
+        return try {
+            val crat = service.create(request)
+            ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(crat.toResponse()))
+        } catch (e: CratOverlapException) {
+            ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(
+                    ApiResponse.error(
+                        httpStatus = 409,
+                        errorCode = "COMMISSION_RATE_OVERLAP",
+                        message = e.message ?: "Commission rate key overlap"
+                    )
+                )
+        }
+    }
+
+    /**
+     * 修改佣金率 (CV004M - Update)
+     */
+    @PutMapping("/{serial}")
+    @Operation(
+        summary = "修改佣金率",
+        description = """修改佣金率資料。對應 V3 CV004M 作業的修改功能。
+
+修改日期範圍或年期範圍時會檢查 key 值是否重疊。
+注意：commClassCode (佣金率類別碼) 不可修改。"""
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "修改成功"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "請求格式錯誤"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "佣金率不存在"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Key 值重疊")
+    )
+    fun update(
+        @Parameter(description = "佣金率序號 (主鍵)")
+        @PathVariable serial: Long,
+        @RequestBody @Validated request: CratUpdateRequest
+    ): ResponseEntity<ApiResponse<CratResponse>> {
+        return try {
+            val crat = service.update(serial, request)
+            ResponseEntity.ok(ApiResponse.success(crat.toResponse()))
+        } catch (e: CratNotFoundException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(
+                    ApiResponse.error(
+                        httpStatus = 404,
+                        errorCode = "COMMISSION_RATE_NOT_FOUND",
+                        message = e.message ?: "Commission rate not found"
+                    )
+                )
+        } catch (e: CratOverlapException) {
+            ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(
+                    ApiResponse.error(
+                        httpStatus = 409,
+                        errorCode = "COMMISSION_RATE_OVERLAP",
+                        message = e.message ?: "Commission rate key overlap"
+                    )
+                )
+        }
+    }
+
+    /**
+     * 刪除佣金率 (CV004M - Delete)
+     */
+    @DeleteMapping("/{serial}")
+    @Operation(
+        summary = "刪除佣金率",
+        description = "刪除佣金率資料。對應 V3 CV004M 作業的刪除功能。"
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "刪除成功"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "佣金率不存在")
+    )
+    fun delete(
+        @Parameter(description = "佣金率序號 (主鍵)")
+        @PathVariable serial: Long
+    ): ResponseEntity<ApiResponse<Unit>> {
+        return try {
+            service.delete(serial)
+            ResponseEntity.noContent().build()
+        } catch (e: CratNotFoundException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(
+                    ApiResponse.error(
+                        httpStatus = 404,
+                        errorCode = "COMMISSION_RATE_NOT_FOUND",
+                        message = e.message ?: "Commission rate not found"
+                    )
+                )
+        }
     }
 
     /**

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    ProductUnitMapper - 產品單位 (紅利分配) MyBatis Mapper
+
+    遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
+    遵循 ADR-016 規範，SQL 集中於 XML 管理。
+-->
+<mapper namespace="com.vlife.cv.coverage.ProductUnitMapper">
+
+    <!-- SQL 片段：紅利分配欄位對應 -->
+    <sql id="productUnitColumns">
+        POLICY_NO as policyNo,
+        COVERAGE_NO as coverageNo,
+        PS06_TYPE as ps06Type,
+        CVPU_TYPE as cvpuType,
+        LAST_ANNIV_DUR as lastAnnivDur,
+        CVPU_STATUS_CODE as statusCode,
+        DIV_DECLARE as divDeclare,
+        DIV_PUA_AMT as divPuaAmt,
+        FINANCIAL_DATE as financialDate,
+        PCPO_NO as pcpoNo,
+        PROGRAM_ID as programId,
+        PROCESS_DATE as processDate,
+        POLICY_TYPE as policyType,
+        CVPU_APPROVED_DATE as approvedDate,
+        PROGRAM_ID_CVPU as programIdCvpu
+    </sql>
+
+    <!--
+        依保單號碼查詢所有紅利分配記錄
+
+        注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+    -->
+    <select id="findByPolicyNo" resultType="com.vlife.cv.coverage.ProductUnit">
+        SELECT <include refid="productUnitColumns"/>
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo}
+        ORDER BY COVERAGE_NO, LAST_ANNIV_DUR
+    </select>
+
+    <!--
+        依保單號碼和承保範圍編號查詢紅利分配記錄
+    -->
+    <select id="findByCoverage" resultType="com.vlife.cv.coverage.ProductUnit">
+        SELECT <include refid="productUnitColumns"/>
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
+        ORDER BY LAST_ANNIV_DUR
+    </select>
+
+    <!--
+        依主鍵查詢單筆紅利分配記錄
+    -->
+    <select id="findById" resultType="com.vlife.cv.coverage.ProductUnit">
+        SELECT <include refid="productUnitColumns"/>
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+          AND PS06_TYPE = #{ps06Type}
+          AND CVPU_TYPE = #{cvpuType}
+          AND LAST_ANNIV_DUR = #{lastAnnivDur}
+    </select>
+
+    <!--
+        計算指定承保範圍的宣告紅利總和
+    -->
+    <select id="sumDivDeclare" resultType="java.math.BigDecimal">
+        SELECT SUM(DIV_DECLARE)
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!--
+        計算指定承保範圍的增值保額紅利總和
+    -->
+    <select id="sumDivPuaAmt" resultType="java.math.BigDecimal">
+        SELECT SUM(DIV_PUA_AMT)
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!--
+        計算指定承保範圍的紅利分配記錄數量
+    -->
+    <select id="countByCoverage" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!--
+        查詢最新週年期間的紅利分配記錄
+    -->
+    <select id="findLatestByCoverage" resultType="com.vlife.cv.coverage.ProductUnit">
+        SELECT <include refid="productUnitColumns"/>
+        FROM CV.CVPU
+        WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
+        ORDER BY LAST_ANNIV_DUR DESC
+        FETCH FIRST 1 ROW ONLY
+    </select>
+
+</mapper>

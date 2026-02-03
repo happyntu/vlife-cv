@@ -1,5 +1,7 @@
 package com.vlife.cv.actuarial
 
+import com.vlife.cv.config.CacheConfig.Companion.CACHE_CVDI_BY_PLAN
+import com.vlife.cv.config.CacheConfig.Companion.CV_CACHE_MANAGER
 import mu.KotlinLogging
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -20,10 +22,6 @@ private val logger = KotlinLogging.logger {}
 class CvdiService(
     private val mapper: CvdiMapper
 ) {
-    companion object {
-        const val CACHE_CVDI_BY_PLAN = "cvdiByPlan"
-    }
-
     /**
      * 依險種代碼和版本查詢所有紅利分配水準
      *
@@ -31,7 +29,7 @@ class CvdiService(
      * @param version 版本號
      * @return 紅利分配水準清單
      */
-    @Cacheable(value = [CACHE_CVDI_BY_PLAN], key = "#planCode + ':' + #version")
+    @Cacheable(value = [CACHE_CVDI_BY_PLAN], key = "#planCode + ':' + #version", cacheManager = CV_CACHE_MANAGER)
     fun findByPlanCode(planCode: String, version: String): List<Cvdi> {
         logger.debug { "Finding CVDI by planCode=$planCode, version=$version" }
         return mapper.findByPlanCode(planCode, version)

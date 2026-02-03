@@ -1,5 +1,7 @@
 package com.vlife.cv.actuarial
 
+import com.vlife.cv.config.CacheConfig.Companion.CACHE_CVRF_BY_PLAN
+import com.vlife.cv.config.CacheConfig.Companion.CV_CACHE_MANAGER
 import mu.KotlinLogging
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -21,10 +23,6 @@ private val logger = KotlinLogging.logger {}
 class CvrfService(
     private val mapper: CvrfMapper
 ) {
-    companion object {
-        const val CACHE_CVRF_BY_PLAN = "cvrfByPlan"
-    }
-
     /**
      * 依險種代碼和版本查詢所有準備金因子
      *
@@ -32,7 +30,7 @@ class CvrfService(
      * @param version 版本號
      * @return 準備金因子清單
      */
-    @Cacheable(value = [CACHE_CVRF_BY_PLAN], key = "#planCode + ':' + #version")
+    @Cacheable(value = [CACHE_CVRF_BY_PLAN], key = "#planCode + ':' + #version", cacheManager = CV_CACHE_MANAGER)
     fun findByPlanCode(planCode: String, version: String): List<Cvrf> {
         logger.debug { "Finding CVRF by planCode=$planCode, version=$version" }
         return mapper.findByPlanCode(planCode, version)

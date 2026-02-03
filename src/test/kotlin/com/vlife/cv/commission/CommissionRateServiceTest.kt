@@ -24,7 +24,7 @@ import kotlin.test.assertTrue
 @DisplayName("CommissionRateService 單元測試")
 class CommissionRateServiceTest {
 
-    private lateinit var mapper: CommissionRateMapper
+    private lateinit var mapper: CratMapper
     private lateinit var service: CommissionRateService
 
     @BeforeEach

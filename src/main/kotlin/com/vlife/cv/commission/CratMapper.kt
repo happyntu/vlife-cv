@@ -5,15 +5,16 @@ import org.apache.ibatis.annotations.Param
 import java.time.LocalDate
 
 /**
- * 佣金率 MyBatis Mapper
+ * 佣金率表 Mapper (CV.CRAT)
  *
  * 遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
  * 遵循 ADR-016 規範，SQL 集中於 XML 管理。
+ * 遵循 ADR-017 規範，Mapper 名稱對應資料庫表格名稱。
  *
- * @see resources/mapper/cv/CommissionRateMapper.xml
+ * @see resources/mapper/cv/CratMapper.xml
  */
 @Mapper
-interface CommissionRateMapper {
+interface CratMapper {
 
     /**
      * 依序號查詢佣金率

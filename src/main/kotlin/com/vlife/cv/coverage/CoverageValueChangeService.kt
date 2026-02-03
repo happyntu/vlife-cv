@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 /**
- * 保單基礎值變化服務
+ * 保單基礎值變化服務 (CV.CVCO)
  *
  * 提供承保範圍狀態變化的查詢功能。
  * 資料量適中 (3,800 筆)，未使用快取。
@@ -17,10 +17,12 @@ import org.springframework.stereotype.Service
  * val coverages = coverageValueChangeService.findByPolicyNo("P000000001")
  * val activeCoverages = coverages.filter { it.isActive() }
  * ```
+ *
+ * @see CvcoMapper Mapper 層（ADR-017 表格導向命名）
  */
 @Service
 class CoverageValueChangeService(
-    private val mapper: CoverageValueChangeMapper
+    private val mapper: CvcoMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 

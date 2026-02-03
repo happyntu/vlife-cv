@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
  * - commissionRateBySerial: 依序號快取單筆佣金率
  * - commissionRateByClassCode: 依類別碼快取佣金率清單
  * - commissionRateEffective: 快取有效佣金率查詢結果
+ * - dividendSummary: 紅利摘要快取
  */
 @Configuration
 @EnableCaching
@@ -32,6 +33,7 @@ class CacheConfig {
         const val CACHE_COMMISSION_RATE_BY_SERIAL = "commissionRateBySerial"
         const val CACHE_COMMISSION_RATE_BY_CLASS_CODE = "commissionRateByClassCode"
         const val CACHE_COMMISSION_RATE_EFFECTIVE = "commissionRateEffective"
+        const val CACHE_DIVIDEND_SUMMARY = "dividendSummary"
 
         private const val DEFAULT_EXPIRE_HOURS = 1L
         private const val DEFAULT_MAX_SIZE = 60_000L
@@ -50,7 +52,8 @@ class CacheConfig {
                 listOf(
                     CACHE_COMMISSION_RATE_BY_SERIAL,
                     CACHE_COMMISSION_RATE_BY_CLASS_CODE,
-                    CACHE_COMMISSION_RATE_EFFECTIVE
+                    CACHE_COMMISSION_RATE_EFFECTIVE,
+                    CACHE_DIVIDEND_SUMMARY
                 )
             )
         }

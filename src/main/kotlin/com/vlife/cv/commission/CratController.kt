@@ -3,6 +3,10 @@ package com.vlife.cv.commission
 import com.vlife.common.response.ApiResponse
 import com.vlife.cv.common.PageRequest
 import com.vlife.cv.common.PageResponse
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import jakarta.validation.constraints.Size
@@ -39,6 +43,7 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/v1/commission-rates")
 @Validated
+@Tag(name = "Commission Rates", description = "佣金率管理 API (CV.CRAT)")
 class CratController(
     private val service: CratService
 ) {
@@ -51,21 +56,27 @@ class CratController(
 
     /**
      * 搜尋佣金率 (分頁)
-     *
-     * @param commClassCode 佣金率類別碼 (可選，最長 5 碼)
-     * @param commLineCode 業務線代號 (可選，最長 2 碼)
-     * @param cratType 佣金率型態 (可選，1 碼)
-     * @param effectiveDate 生效日期 (可選，格式 yyyy-MM-dd)
-     * @param pageNum 頁碼 (從 1 開始，預設 1)
-     * @param pageSize 每頁筆數 (1-100，預設 20)
      */
     @GetMapping
+    @Operation(
+        summary = "搜尋佣金率",
+        description = "依條件搜尋佣金率，支援分頁。可依類別碼、業務線代號、型態、生效日期篩選。"
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "搜尋成功")
+    )
     fun search(
+        @Parameter(description = "佣金率類別碼 (最長 5 碼)")
         @RequestParam(required = false) @Size(max = MAX_CLASS_CODE_LENGTH) commClassCode: String?,
+        @Parameter(description = "業務線代號 (最長 2 碼)")
         @RequestParam(required = false) @Size(max = MAX_LINE_CODE_LENGTH) commLineCode: String?,
+        @Parameter(description = "佣金率型態 (1 碼)")
         @RequestParam(required = false) @Size(max = MAX_CRAT_TYPE_LENGTH) cratType: String?,
+        @Parameter(description = "生效日期 (格式 yyyy-MM-dd)")
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) effectiveDate: LocalDate?,
+        @Parameter(description = "頁碼 (從 1 開始)")
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
+        @Parameter(description = "每頁筆數 (1-100)")
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
     ): ResponseEntity<ApiResponse<PageResponse<CratResponse>>> {
         val query = CratQuery(
@@ -81,11 +92,18 @@ class CratController(
 
     /**
      * 依序號查詢佣金率
-     *
-     * @param serial 序號 (主鍵)
      */
     @GetMapping("/{serial}")
+    @Operation(
+        summary = "依序號查詢佣金率",
+        description = "依主鍵序號查詢單筆佣金率資料。"
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "查詢成功"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "佣金率不存在")
+    )
     fun getBySerial(
+        @Parameter(description = "佣金率序號 (主鍵)")
         @PathVariable serial: Long
     ): ResponseEntity<ApiResponse<CratResponse?>> {
         val rate = service.findBySerial(serial)
@@ -105,11 +123,14 @@ class CratController(
 
     /**
      * 依佣金類別碼查詢
-     *
-     * @param classCode 佣金率類別碼 (1-5 碼)
      */
     @GetMapping("/class/{classCode}")
+    @Operation(
+        summary = "依類別碼查詢佣金率",
+        description = "查詢指定類別碼下的所有佣金率。"
+    )
     fun getByClassCode(
+        @Parameter(description = "佣金率類別碼 (1-5 碼)")
         @PathVariable @Size(min = 1, max = MAX_CLASS_CODE_LENGTH) classCode: String
     ): ResponseEntity<ApiResponse<List<CratResponse>>> {
         val rates = service.findByClassCode(classCode)
@@ -119,17 +140,20 @@ class CratController(
 
     /**
      * 查詢有效佣金率
-     *
-     * @param commClassCode 佣金率類別碼 (1-5 碼)
-     * @param commLineCode 業務線代號 (1-2 碼)
-     * @param effectiveDate 生效日期 (格式 yyyy-MM-dd)
-     * @param age 年齡 (可選)
      */
     @GetMapping("/effective")
+    @Operation(
+        summary = "查詢有效佣金率",
+        description = "依類別碼、業務線代號及生效日期查詢有效的佣金率。可選擇性依年齡篩選。"
+    )
     fun getEffectiveRates(
+        @Parameter(description = "佣金率類別碼 (1-5 碼)", required = true)
         @RequestParam @Size(min = 1, max = MAX_CLASS_CODE_LENGTH) commClassCode: String,
+        @Parameter(description = "業務線代號 (1-2 碼)", required = true)
         @RequestParam @Size(min = 1, max = MAX_LINE_CODE_LENGTH) commLineCode: String,
+        @Parameter(description = "生效日期 (格式 yyyy-MM-dd)", required = true)
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) effectiveDate: LocalDate,
+        @Parameter(description = "年齡 (0-150)")
         @RequestParam(required = false) @Min(0) @Max(150) age: Int?
     ): ResponseEntity<ApiResponse<List<CratResponse>>> {
         val rates = if (age != null) {
@@ -146,6 +170,10 @@ class CratController(
      * 列出所有業務線代號
      */
     @GetMapping("/line-codes")
+    @Operation(
+        summary = "列出所有業務線代號",
+        description = "取得資料庫中所有不重複的業務線代號清單。"
+    )
     fun getAllLineCodes(): ResponseEntity<ApiResponse<List<LineCodeResponse>>> {
         val lineCodes = service.findAllLineCodes()
         val response = lineCodes.map { code ->
@@ -162,6 +190,10 @@ class CratController(
      * 列出所有佣金率型態
      */
     @GetMapping("/crat-types")
+    @Operation(
+        summary = "列出所有佣金率型態",
+        description = "取得資料庫中所有不重複的佣金率型態清單。"
+    )
     fun getAllCratTypes(): ResponseEntity<ApiResponse<List<CratTypeResponse>>> {
         val types = service.findAllCratTypes()
         val response = types.map { code ->
@@ -176,11 +208,14 @@ class CratController(
 
     /**
      * 依業務線代號查詢所有類別碼
-     *
-     * @param lineCode 業務線代號 (1-2 碼)
      */
     @GetMapping("/line-codes/{lineCode}/class-codes")
+    @Operation(
+        summary = "依業務線查詢類別碼",
+        description = "取得指定業務線代號下所有不重複的類別碼清單。"
+    )
     fun getClassCodesByLineCode(
+        @Parameter(description = "業務線代號 (1-2 碼)")
         @PathVariable @Size(min = 1, max = MAX_LINE_CODE_LENGTH) lineCode: String
     ): ResponseEntity<ApiResponse<List<String>>> {
         val classCodes = service.findClassCodesByLineCode(lineCode)
@@ -189,10 +224,12 @@ class CratController(
 
     /**
      * 刷新佣金率快取
-     *
-     * 此為內部管理 API，生產環境應配置 Spring Security 限制存取。
      */
     @PostMapping("/refresh")
+    @Operation(
+        summary = "刷新快取",
+        description = "清除並刷新佣金率快取。此為內部管理 API，生產環境應配置存取限制。"
+    )
     fun refreshCache(): ResponseEntity<ApiResponse<String>> {
         service.refreshCache()
         return ResponseEntity.ok(ApiResponse.success("Cache refreshed"))

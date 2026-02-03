@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    CvrfMapper - 準備金因子檔 MyBatis Mapper
+
+    遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
+    遵循 ADR-016 規範，SQL 集中於 XML 管理。
+    遵循 ADR-017 規範，Mapper 名稱對應資料庫表格名稱 (CVRF)。
+
+    對應 V3 的 CVRF 表格。
+    ⚠️ 跨模組使用：被 BL、CL、CV 三個模組使用
+-->
+<mapper namespace="com.vlife.cv.actuarial.CvrfMapper">
+
+    <!-- SQL 片段：準備金因子欄位對應 -->
+    <sql id="cvrfColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        DUR_TYPE as durationType,
+        DUR_YEAR as durationYear,
+        COLL_YEAR as collectionYear,
+        PAY_MODE as payMode,
+        INSURED_TYPE as insuredType,
+        PO_RVF_DEATH as policyReserveDeathFactor,
+        PO_RVF_RATE as policyReserveRate,
+        RVF_DEATH as reserveDeathFactor,
+        RVF_RATE as reserveRate,
+        PO_RVF_TSO as policyReserveTso,
+        RVF_TSO as reserveTso,
+        ET_RVF_RATE as etReserveRate,
+        ET_RVF_TSO_IND as etReserveTsoInd,
+        RBN_TYPE as rbnType,
+        SBN_TYPE as sbnType,
+        I2_6_OR_NOT as i26OrNot,
+        I2_6_PRAT as i26Rate,
+        ACCI_OR_NOT as accidentOrNot,
+        ACCI_PRAT as accidentRate,
+        RET_PREM_IND as returnPremInd,
+        RETURN_INT_TYPE as returnIntType,
+        RETURN_INT as returnInt,
+        RETURN_COST_F as returnCostFlag,
+        MODIFY_RV_IND as modifyReserveInd,
+        RECORD_TYPE_10 as recordType10,
+        MIX_RVF_IND as mixReserveInd,
+        RET_PREM_IND2 as returnPremInd2,
+        ET_PO_RVF_RATE as etPolicyReserveRate,
+        ET_PO_RVF_TSO_IND as etPolicyReserveTsoInd,
+        ET_ACCI_IND as etAccidentInd,
+        ET_ACCI_RATE as etAccidentRate
+    </sql>
+
+    <!--
+        依險種代碼和版本查詢所有準備金因子
+    -->
+    <select id="findByPlanCode" resultType="com.vlife.cv.actuarial.Cvrf">
+        SELECT <include refid="cvrfColumns"/>
+        FROM CV.CVRF
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+        ORDER BY DUR_TYPE
+    </select>
+
+    <!--
+        依主鍵查詢單筆準備金因子
+    -->
+    <select id="findById" resultType="com.vlife.cv.actuarial.Cvrf">
+        SELECT <include refid="cvrfColumns"/>
+        FROM CV.CVRF
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND DUR_TYPE = #{durationType}
+    </select>
+
+    <!--
+        依期間類型查詢準備金因子
+    -->
+    <select id="findByDurationType" resultType="com.vlife.cv.actuarial.Cvrf">
+        SELECT <include refid="cvrfColumns"/>
+        FROM CV.CVRF
+        WHERE DUR_TYPE = #{durationType}
+        ORDER BY PLAN_CODE, VERSION
+    </select>
+
+    <!--
+        查詢所有不重複的險種代碼
+    -->
+    <select id="findAllPlanCodes" resultType="java.lang.String">
+        SELECT DISTINCT PLAN_CODE
+        FROM CV.CVRF
+        ORDER BY PLAN_CODE
+    </select>
+
+    <!--
+        計算指定險種的準備金因子數量
+    -->
+    <select id="countByPlanCode" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.CVRF
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+    </select>
+
+</mapper>

@@ -1,6 +1,7 @@
 package com.vlife.cv.commission
 
 import com.vlife.common.response.ApiResponse
+import com.vlife.common.security.AdminOnly
 import com.vlife.cv.common.PageRequest
 import com.vlife.cv.common.PageResponse
 import io.swagger.v3.oas.annotations.Operation
@@ -224,11 +225,22 @@ class CratController(
 
     /**
      * 刷新佣金率快取
+     *
+     * **存取控制**：此端點為管理員專用，需在 API Gateway (Kong) 配置 ACL 限制。
      */
     @PostMapping("/refresh")
+    @AdminOnly(description = "快取刷新需管理員權限")
     @Operation(
-        summary = "刷新快取",
-        description = "清除並刷新佣金率快取。此為內部管理 API，生產環境應配置存取限制。"
+        summary = "刷新快取 (管理員)",
+        description = """清除並刷新佣金率快取。
+
+**存取控制**：此端點僅限管理員使用。
+- 生產環境透過 Kong API Gateway ACL 控制存取
+- 開發環境可直接呼叫（測試用途）"""
+    )
+    @ApiResponses(
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "快取刷新成功"),
+        io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "無權限存取")
     )
     fun refreshCache(): ResponseEntity<ApiResponse<String>> {
         service.refreshCache()

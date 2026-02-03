@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import java.math.BigDecimal
 import java.time.LocalDate
 
 /**
@@ -176,9 +175,9 @@ class CvcoController(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @Parameter(description = "承保範圍編號")
         @PathVariable @Min(0) coverageNo: Int
-    ): ResponseEntity<ApiResponse<List<CvpuResponse>>> {
+    ): ResponseEntity<ApiResponse<List<CvpuDto>>> {
         val productUnits = cvpuService.findByCoverage(policyNo, coverageNo)
-        val response = productUnits.map { it.toResponse() }
+        val response = productUnits.map { it.toDto() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -196,9 +195,9 @@ class CvcoController(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @Parameter(description = "承保範圍編號")
         @PathVariable @Min(0) coverageNo: Int
-    ): ResponseEntity<ApiResponse<DividendSummaryResponse>> {
+    ): ResponseEntity<ApiResponse<DividendSummaryDto>> {
         val summary = cvpuService.getDividendSummary(policyNo, coverageNo)
-        return ResponseEntity.ok(ApiResponse.success(summary.toResponse()))
+        return ResponseEntity.ok(ApiResponse.success(summary.toDto()))
     }
 
     /**
@@ -217,9 +216,9 @@ class CvcoController(
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
         @Parameter(description = "每頁筆數 (1-100)")
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
-    ): ResponseEntity<ApiResponse<PageResponse<CvpuResponse>>> {
+    ): ResponseEntity<ApiResponse<PageResponse<CvpuDto>>> {
         val pageInfo = cvpuService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
-        val response = PageResponse.from(pageInfo) { it.toResponse() }
+        val response = PageResponse.from(pageInfo) { it.toDto() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
@@ -244,7 +243,7 @@ class CvcoController(
         isActive = isActive()
     )
 
-    private fun Cvpu.toResponse() = CvpuResponse(
+    private fun Cvpu.toDto() = CvpuDto(
         policyNo = policyNo,
         coverageNo = coverageNo,
         ps06Type = ps06Type,
@@ -261,10 +260,11 @@ class CvcoController(
         processDate = processDate,
         policyType = policyType,
         approvedDate = approvedDate,
-        programIdCvpu = programIdCvpu
+        programIdCvpu = programIdCvpu,
+        isActive = isActive()
     )
 
-    private fun DividendSummary.toResponse() = DividendSummaryResponse(
+    private fun DividendSummary.toDto() = DividendSummaryDto(
         policyNo = policyNo,
         coverageNo = coverageNo,
         totalDivDeclare = totalDivDeclare,
@@ -298,37 +298,4 @@ data class CvcoResponse(
     val isActive: Boolean
 )
 
-/**
- * 紅利分配 API 回應格式 (CV.CVPU)
- */
-data class CvpuResponse(
-    val policyNo: String,
-    val coverageNo: Int,
-    val ps06Type: String,
-    val cvpuType: String,
-    val lastAnnivDur: Int,
-    val statusCode: String?,
-    val statusDesc: String?,
-    val divDeclare: BigDecimal,
-    val divPuaAmt: BigDecimal,
-    val totalDividend: BigDecimal,
-    val financialDate: LocalDate?,
-    val pcpoNo: String?,
-    val programId: String?,
-    val processDate: LocalDate?,
-    val policyType: String?,
-    val approvedDate: LocalDate?,
-    val programIdCvpu: String?
-)
-
-/**
- * 紅利摘要 API 回應格式
- */
-data class DividendSummaryResponse(
-    val policyNo: String,
-    val coverageNo: Int,
-    val totalDivDeclare: BigDecimal,
-    val totalDivPuaAmt: BigDecimal,
-    val totalDividend: BigDecimal,
-    val recordCount: Int
-)
+// CvpuDto 和 DividendSummaryDto 定義在 CvpuController.kt 中，統一使用

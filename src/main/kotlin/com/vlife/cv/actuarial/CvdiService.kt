@@ -3,6 +3,7 @@ package com.vlife.cv.actuarial
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_CVDI_BY_PLAN
 import com.vlife.cv.config.CacheConfig.Companion.CV_CACHE_MANAGER
 import mu.KotlinLogging
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -128,5 +129,15 @@ class CvdiService(
      */
     fun existsByPlanCode(planCode: String, version: String): Boolean {
         return countByPlanCode(planCode, version) > 0
+    }
+
+    /**
+     * 清除紅利分配水準快取
+     *
+     * **存取控制**：此方法為管理員專用，API 端點需配置存取限制。
+     */
+    @CacheEvict(value = [CACHE_CVDI_BY_PLAN], allEntries = true, cacheManager = CV_CACHE_MANAGER)
+    fun evictCache() {
+        logger.info { "Evicted all CVDI cache entries" }
     }
 }

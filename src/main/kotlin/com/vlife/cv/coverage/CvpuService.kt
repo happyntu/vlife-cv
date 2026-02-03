@@ -6,6 +6,7 @@ import com.vlife.cv.common.PageRequest
 import com.vlife.cv.config.CacheConfig.Companion.CACHE_DIVIDEND_SUMMARY
 import com.vlife.cv.config.CacheConfig.Companion.CV_CACHE_MANAGER
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
@@ -33,6 +34,20 @@ class CvpuService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    // region 驗證方法
+
+    private fun validatePolicyNo(policyNo: String) {
+        require(policyNo.isNotBlank() && policyNo.length <= 10) {
+            "policyNo must be non-blank and at most 10 characters"
+        }
+    }
+
+    private fun validateCoverageNo(coverageNo: Int) {
+        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+    }
+
+    // endregion
+
     /**
      * 依保單號碼查詢所有紅利分配記錄 (分頁)
      *
@@ -41,9 +56,7 @@ class CvpuService(
      * @return 分頁結果
      */
     fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<Cvpu> {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         log.debug("Finding product units for policy: {} (page: {})", policyNo, pageRequest.pageNum)
         return PageHelper.startPage<Cvpu>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByPolicyNo(policyNo) }
@@ -56,9 +69,7 @@ class CvpuService(
      * @return 紅利分配清單
      */
     fun findByPolicyNo(policyNo: String): List<Cvpu> {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         log.debug("Finding product units for policy: {}", policyNo)
         return mapper.findByPolicyNo(policyNo)
     }
@@ -71,10 +82,8 @@ class CvpuService(
      * @return 紅利分配清單
      */
     fun findByCoverage(policyNo: String, coverageNo: Int): List<Cvpu> {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         log.debug("Finding product units for coverage: {}:{}", policyNo, coverageNo)
         return mapper.findByCoverage(policyNo, coverageNo)
     }
@@ -103,10 +112,8 @@ class CvpuService(
      * @return 最新紅利分配記錄，無資料時回傳 null
      */
     fun findLatestByCoverage(policyNo: String, coverageNo: Int): Cvpu? {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         log.debug("Finding latest product unit for coverage: {}:{}", policyNo, coverageNo)
         return mapper.findLatestByCoverage(policyNo, coverageNo)
     }
@@ -119,10 +126,8 @@ class CvpuService(
      * @return 宣告紅利總和，無資料時回傳 BigDecimal.ZERO
      */
     fun sumDivDeclare(policyNo: String, coverageNo: Int): BigDecimal {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         return mapper.sumDivDeclare(policyNo, coverageNo) ?: BigDecimal.ZERO
     }
 
@@ -134,10 +139,8 @@ class CvpuService(
      * @return 增值保額紅利總和，無資料時回傳 BigDecimal.ZERO
      */
     fun sumDivPuaAmt(policyNo: String, coverageNo: Int): BigDecimal {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         return mapper.sumDivPuaAmt(policyNo, coverageNo) ?: BigDecimal.ZERO
     }
 
@@ -156,10 +159,8 @@ class CvpuService(
         cacheManager = CV_CACHE_MANAGER
     )
     fun getDividendSummary(policyNo: String, coverageNo: Int): DividendSummary {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         log.debug("Calculating dividend summary for coverage: {}:{}", policyNo, coverageNo)
         return DividendSummary(
             policyNo = policyNo,
@@ -171,6 +172,16 @@ class CvpuService(
     }
 
     /**
+     * 清除紅利摘要快取
+     *
+     * **存取控制**：此方法為管理員專用，API 端點需配置存取限制。
+     */
+    @CacheEvict(value = [CACHE_DIVIDEND_SUMMARY], allEntries = true, cacheManager = CV_CACHE_MANAGER)
+    fun evictDividendSummaryCache() {
+        log.info("Evicted all dividend summary cache entries")
+    }
+
+    /**
      * 計算指定承保範圍的紅利分配記錄數量
      *
      * @param policyNo 保單號碼
@@ -178,10 +189,8 @@ class CvpuService(
      * @return 記錄數量
      */
     fun countByCoverage(policyNo: String, coverageNo: Int): Int {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         return mapper.countByCoverage(policyNo, coverageNo)
     }
 
@@ -193,10 +202,8 @@ class CvpuService(
      * @return true 若存在
      */
     fun existsByCoverage(policyNo: String, coverageNo: Int): Boolean {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         return countByCoverage(policyNo, coverageNo) > 0
     }
 }

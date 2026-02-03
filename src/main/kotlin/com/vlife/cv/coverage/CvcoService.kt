@@ -29,6 +29,32 @@ class CvcoService(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
+    // region 驗證方法
+
+    private fun validatePolicyNo(policyNo: String) {
+        require(policyNo.isNotBlank() && policyNo.length <= 10) {
+            "policyNo must be non-blank and at most 10 characters"
+        }
+    }
+
+    private fun validateCoverageNo(coverageNo: Int) {
+        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+    }
+
+    private fun validatePlanCode(planCode: String) {
+        require(planCode.isNotBlank() && planCode.length <= 5) {
+            "planCode must be non-blank and at most 5 characters"
+        }
+    }
+
+    private fun validateStatusCode(statusCode: String) {
+        require(statusCode.isNotBlank() && statusCode.length <= 1) {
+            "statusCode must be exactly 1 character"
+        }
+    }
+
+    // endregion
+
     /**
      * 依保單號碼查詢所有承保範圍 (分頁)
      *
@@ -37,9 +63,7 @@ class CvcoService(
      * @return 分頁結果
      */
     fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<Cvco> {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         log.debug("Finding coverages for policy: {} (page: {})", policyNo, pageRequest.pageNum)
         return PageHelper.startPage<Cvco>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByPolicyNo(policyNo) }
@@ -52,9 +76,7 @@ class CvcoService(
      * @return 承保範圍清單
      */
     fun findByPolicyNo(policyNo: String): List<Cvco> {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         log.debug("Finding coverages for policy: {}", policyNo)
         return mapper.findByPolicyNo(policyNo)
     }
@@ -67,10 +89,8 @@ class CvcoService(
      * @return 承保範圍資料，不存在時回傳 null
      */
     fun findById(policyNo: String, coverageNo: Int): Cvco? {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
-        require(coverageNo >= 0) { "coverageNo must be non-negative" }
+        validatePolicyNo(policyNo)
+        validateCoverageNo(coverageNo)
         log.debug("Finding coverage: {}:{}", policyNo, coverageNo)
         return mapper.findById(policyNo, coverageNo)
     }
@@ -83,9 +103,7 @@ class CvcoService(
      * @return 分頁結果
      */
     fun findByPlanCode(planCode: String, pageRequest: PageRequest): PageInfo<Cvco> {
-        require(planCode.isNotBlank() && planCode.length <= 5) {
-            "planCode must be non-blank and at most 5 characters"
-        }
+        validatePlanCode(planCode)
         log.debug("Finding coverages for plan code: {} (page: {})", planCode, pageRequest.pageNum)
         return PageHelper.startPage<Cvco>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByPlanCode(planCode) }
@@ -98,9 +116,7 @@ class CvcoService(
      * @return 承保範圍清單
      */
     fun findByPlanCode(planCode: String): List<Cvco> {
-        require(planCode.isNotBlank() && planCode.length <= 5) {
-            "planCode must be non-blank and at most 5 characters"
-        }
+        validatePlanCode(planCode)
         log.debug("Finding coverages for plan code: {}", planCode)
         return mapper.findByPlanCode(planCode)
     }
@@ -113,9 +129,7 @@ class CvcoService(
      * @return 分頁結果
      */
     fun findByStatusCode(statusCode: String, pageRequest: PageRequest): PageInfo<Cvco> {
-        require(statusCode.isNotBlank() && statusCode.length <= 1) {
-            "statusCode must be exactly 1 character"
-        }
+        validateStatusCode(statusCode)
         log.debug("Finding coverages by status: {} (page: {})", statusCode, pageRequest.pageNum)
         return PageHelper.startPage<Cvco>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByStatusCode(statusCode) }
@@ -128,9 +142,7 @@ class CvcoService(
      * @return 承保範圍清單
      */
     fun findByStatusCode(statusCode: String): List<Cvco> {
-        require(statusCode.isNotBlank() && statusCode.length <= 1) {
-            "statusCode must be exactly 1 character"
-        }
+        validateStatusCode(statusCode)
         log.debug("Finding coverages by status: {}", statusCode)
         return mapper.findByStatusCode(statusCode)
     }
@@ -168,9 +180,7 @@ class CvcoService(
      * @return true 若存在
      */
     fun existsByPolicyNo(policyNo: String): Boolean {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         return mapper.countByPolicyNo(policyNo) > 0
     }
 
@@ -181,9 +191,7 @@ class CvcoService(
      * @return 承保範圍數量
      */
     fun countByPolicyNo(policyNo: String): Int {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         return mapper.countByPolicyNo(policyNo)
     }
 
@@ -194,9 +202,7 @@ class CvcoService(
      * @return 有效承保範圍清單
      */
     fun findActiveCoverages(policyNo: String): List<Cvco> {
-        require(policyNo.isNotBlank() && policyNo.length <= 10) {
-            "policyNo must be non-blank and at most 10 characters"
-        }
+        validatePolicyNo(policyNo)
         return findByPolicyNo(policyNo).filter { it.isActive() }
     }
 }

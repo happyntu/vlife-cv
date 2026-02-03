@@ -1,0 +1,117 @@
+-- =============================================================================
+-- V1.0.0: CV 模組核心表格 (CRAT, CVCO, CVPU)
+-- 來源: V3.CV Schema
+-- 目標: Oracle 21c+
+-- =============================================================================
+
+-- -----------------------------------------------------------------------------
+-- 1. 佣金率表 (CRAT) - Commission Rate
+-- -----------------------------------------------------------------------------
+CREATE TABLE CRAT (
+    CRAT_SERIAL       NUMBER(10)     NOT NULL,
+    COMM_CLASS_CODE   VARCHAR2(10)   NOT NULL,
+    COMM_LINE_CODE    VARCHAR2(10)   NOT NULL,
+    CRAT_TYPE         VARCHAR2(2),
+    PROJ_NO           VARCHAR2(10),
+    STR_DATE          DATE           NOT NULL,
+    END_DATE          DATE           NOT NULL,
+    CRAT_KEY1         VARCHAR2(10),
+    CRAT_KEY2         VARCHAR2(10),
+    COMM_START_YEAR   NUMBER(5),
+    COMM_END_YEAR     NUMBER(5),
+    COMM_START_AGE    NUMBER(5),
+    COMM_END_AGE      NUMBER(5),
+    COMM_START_MODX   NUMBER(5),
+    COMM_END_MODX     NUMBER(5),
+    COMM_RATE         NUMBER(10,6)   NOT NULL,
+    COMM_RATE_ORG     NUMBER(10,6),
+    PREM_LIMIT_STR    NUMBER(15,2),
+    PREM_LIMIT_END    NUMBER(15,2),
+
+    CONSTRAINT PK_CRAT PRIMARY KEY (CRAT_SERIAL)
+);
+
+COMMENT ON TABLE CRAT IS '佣金率表 (原 V3.CV.CRAT)';
+COMMENT ON COLUMN CRAT.CRAT_SERIAL IS '序號 (PK)';
+COMMENT ON COLUMN CRAT.COMM_CLASS_CODE IS '佣金類別碼';
+COMMENT ON COLUMN CRAT.COMM_LINE_CODE IS '業務線代號';
+COMMENT ON COLUMN CRAT.CRAT_TYPE IS '佣金率型態';
+COMMENT ON COLUMN CRAT.STR_DATE IS '生效起日';
+COMMENT ON COLUMN CRAT.END_DATE IS '生效迄日';
+COMMENT ON COLUMN CRAT.COMM_RATE IS '佣金率';
+
+-- 佣金率查詢索引
+CREATE INDEX IDX_CRAT_CLASS_CODE ON CRAT(COMM_CLASS_CODE);
+CREATE INDEX IDX_CRAT_LINE_CODE ON CRAT(COMM_LINE_CODE);
+CREATE INDEX IDX_CRAT_EFFECTIVE ON CRAT(STR_DATE, END_DATE);
+
+-- -----------------------------------------------------------------------------
+-- 2. 承保範圍表 (CVCO) - Coverage
+-- -----------------------------------------------------------------------------
+CREATE TABLE CVCO (
+    POLICY_NO         VARCHAR2(10)   NOT NULL,
+    COVERAGE_NO       NUMBER(5)      NOT NULL,
+    PLAN_CODE         VARCHAR2(5)    NOT NULL,
+    VERSION           VARCHAR2(3)    NOT NULL,
+    RATE_SEX          VARCHAR2(1)    NOT NULL,
+    RATE_AGE          NUMBER(5)      NOT NULL,
+    RATE_SUB_1        VARCHAR2(10)   NOT NULL,
+    RATE_SUB_2        VARCHAR2(10)   NOT NULL,
+    CO_ISSUE_DATE     DATE           NOT NULL,
+    CO_STATUS_CODE    VARCHAR2(1)    NOT NULL,
+    INSURANCE_TYPE_3  VARCHAR2(1)    NOT NULL,
+    PROCESS_DATE      DATE           NOT NULL,
+    PROCESS_TYPE      VARCHAR2(2)    NOT NULL,
+    POLICY_TYPE       VARCHAR2(1),
+    CO_STATUS_CODE2   VARCHAR2(1),
+
+    CONSTRAINT PK_CVCO PRIMARY KEY (POLICY_NO, COVERAGE_NO)
+);
+
+COMMENT ON TABLE CVCO IS '承保範圍表 (原 V3.CV.CVCO)';
+COMMENT ON COLUMN CVCO.POLICY_NO IS '保單號碼 (PK)';
+COMMENT ON COLUMN CVCO.COVERAGE_NO IS '承保範圍編號 (PK)';
+COMMENT ON COLUMN CVCO.PLAN_CODE IS '險種代碼';
+COMMENT ON COLUMN CVCO.CO_STATUS_CODE IS '承保狀態碼';
+COMMENT ON COLUMN CVCO.CO_ISSUE_DATE IS '核發日期';
+
+-- 承保範圍查詢索引
+CREATE INDEX IDX_CVCO_PLAN_CODE ON CVCO(PLAN_CODE);
+CREATE INDEX IDX_CVCO_STATUS ON CVCO(CO_STATUS_CODE);
+CREATE INDEX IDX_CVCO_PROCESS_DATE ON CVCO(PROCESS_DATE);
+
+-- -----------------------------------------------------------------------------
+-- 3. 產品單位表 (CVPU) - Product Unit / 紅利分配
+-- -----------------------------------------------------------------------------
+CREATE TABLE CVPU (
+    POLICY_NO          VARCHAR2(10)   NOT NULL,
+    COVERAGE_NO        NUMBER(5)      NOT NULL,
+    PS06_TYPE          VARCHAR2(1)    NOT NULL,
+    CVPU_TYPE          VARCHAR2(1)    NOT NULL,
+    LAST_ANNIV_DUR     NUMBER(5)      NOT NULL,
+    CVPU_STATUS_CODE   VARCHAR2(1),
+    DIV_DECLARE        NUMBER(15,2)   DEFAULT 0,
+    DIV_PUA_AMT        NUMBER(15,2)   DEFAULT 0,
+    FINANCIAL_DATE     DATE,
+    PCPO_NO            VARCHAR2(10),
+    PROGRAM_ID         VARCHAR2(10),
+    PROCESS_DATE       DATE,
+    POLICY_TYPE        VARCHAR2(1),
+    CVPU_APPROVED_DATE DATE,
+    PROGRAM_ID_CVPU    VARCHAR2(10),
+
+    CONSTRAINT PK_CVPU PRIMARY KEY (POLICY_NO, COVERAGE_NO, PS06_TYPE, CVPU_TYPE, LAST_ANNIV_DUR)
+);
+
+COMMENT ON TABLE CVPU IS '產品單位表/紅利分配 (原 V3.CV.CVPU)';
+COMMENT ON COLUMN CVPU.POLICY_NO IS '保單號碼 (PK)';
+COMMENT ON COLUMN CVPU.COVERAGE_NO IS '承保範圍編號 (PK)';
+COMMENT ON COLUMN CVPU.PS06_TYPE IS 'PS06類型 (PK)';
+COMMENT ON COLUMN CVPU.CVPU_TYPE IS 'CVPU類型 (PK)';
+COMMENT ON COLUMN CVPU.LAST_ANNIV_DUR IS '週年期間 (PK)';
+COMMENT ON COLUMN CVPU.DIV_DECLARE IS '宣告紅利';
+COMMENT ON COLUMN CVPU.DIV_PUA_AMT IS '增值保額紅利';
+
+-- 紅利分配查詢索引
+CREATE INDEX IDX_CVPU_COVERAGE ON CVPU(POLICY_NO, COVERAGE_NO);
+CREATE INDEX IDX_CVPU_STATUS ON CVPU(CVPU_STATUS_CODE);

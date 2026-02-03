@@ -1,0 +1,49 @@
+# ============================================================
+# VLIFE-V4 CV Module Integration Test Configuration
+# 使用 TestContainers 動態注入 DB 連線資訊
+# ============================================================
+spring:
+  application:
+    name: vlife-cv-integration-test
+
+  # -------------------- 資料庫連線 (由 TestContainers 動態設定) --------------------
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521/VLIFE
+    username: vlife
+    password: vlife123
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+
+  # -------------------- Flyway (CV 模組使用初始化腳本，停用 Flyway) --------------------
+  flyway:
+    enabled: false
+
+# -------------------- MyBatis --------------------
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    default-fetch-size: 100
+    default-statement-timeout: 30
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+# -------------------- PageHelper --------------------
+pagehelper:
+  helper-dialect: oracle
+  reasonable: true
+  support-methods-arguments: true
+
+# -------------------- Server --------------------
+server:
+  port: 0
+
+# -------------------- Logging --------------------
+logging:
+  level:
+    root: WARN
+    com.vlife: DEBUG
+    org.testcontainers: INFO
+    org.mybatis: DEBUG

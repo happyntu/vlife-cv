@@ -34,6 +34,8 @@ class CacheConfig {
         const val CACHE_COMMISSION_RATE_BY_CLASS_CODE = "commissionRateByClassCode"
         const val CACHE_COMMISSION_RATE_EFFECTIVE = "commissionRateEffective"
         const val CACHE_DIVIDEND_SUMMARY = "dividendSummary"
+        const val CACHE_CVDI_BY_PLAN = "cvdiByPlan"
+        const val CACHE_CVRF_BY_PLAN = "cvrfByPlan"
 
         private const val DEFAULT_EXPIRE_HOURS = 1L
         private const val DEFAULT_MAX_SIZE = 60_000L
@@ -53,7 +55,9 @@ class CacheConfig {
                     CACHE_COMMISSION_RATE_BY_SERIAL,
                     CACHE_COMMISSION_RATE_BY_CLASS_CODE,
                     CACHE_COMMISSION_RATE_EFFECTIVE,
-                    CACHE_DIVIDEND_SUMMARY
+                    CACHE_DIVIDEND_SUMMARY,
+                    CACHE_CVDI_BY_PLAN,
+                    CACHE_CVRF_BY_PLAN
                 )
             )
         }

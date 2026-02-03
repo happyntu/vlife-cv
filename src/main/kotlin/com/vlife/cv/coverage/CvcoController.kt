@@ -90,7 +90,7 @@ class CvcoController(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @Parameter(description = "承保範圍編號")
         @PathVariable @Min(0) coverageNo: Int
-    ): ResponseEntity<ApiResponse<CvcoResponse?>> {
+    ): ResponseEntity<ApiResponse<CvcoResponse>> {
         val coverage = cvcoService.findById(policyNo, coverageNo)
         return if (coverage != null) {
             ResponseEntity.ok(ApiResponse.success(coverage.toResponse()))

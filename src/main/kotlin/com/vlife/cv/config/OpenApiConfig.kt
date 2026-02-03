@@ -26,6 +26,9 @@ class OpenApiConfig {
     @Value("\${spring.application.name:vlife-cv}")
     private lateinit var applicationName: String
 
+    @Value("\${vlife.api.production-url:https://api.vlife.com.tw}")
+    private lateinit var productionApiUrl: String
+
     @Bean
     fun customOpenAPI(): OpenAPI {
         return OpenAPI()
@@ -35,7 +38,7 @@ class OpenApiConfig {
                     .url("/")
                     .description("本地開發環境"),
                 Server()
-                    .url("https://api.vlife.com.tw")
+                    .url(productionApiUrl)
                     .description("生產環境")
             ))
             .tags(listOf(

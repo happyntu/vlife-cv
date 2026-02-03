@@ -4,15 +4,18 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 /**
- * 產品單位檔 (CVPU) - 紅利分配
+ * 產品單位檔 Entity (CV.CVPU) - 紅利分配
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 對應 V3.CVPU 表格，管理保單紅利分配與增值保額記錄。
  * 資料量：148 筆，跨模組使用 (PC, BL, CV)。
  *
+ * 業務別名：ProductUnit
+ *
  * 使用範例：
  * ```kotlin
- * val dividends = productUnitService.findByPolicyNo("P000000001")
- * val totalDividend = productUnitService.sumDividendDeclare("P000000001", 1)
+ * val dividends = cvpuService.findByPolicyNo("P000000001")
+ * val totalDividend = cvpuService.sumDividendDeclare("P000000001", 1)
  * ```
  *
  * @property policyNo 保單號碼 (PK, 10 碼)
@@ -31,7 +34,7 @@ import java.time.LocalDate
  * @property approvedDate 核准日期 (可空)
  * @property programIdCvpu CVPU程式代碼 (可空)
  */
-data class ProductUnit(
+data class Cvpu(
     val policyNo: String,
     val coverageNo: Int,
     val ps06Type: String,
@@ -69,12 +72,12 @@ data class ProductUnit(
     /**
      * 複合主鍵
      */
-    val id: ProductUnitId get() = ProductUnitId(policyNo, coverageNo, ps06Type, cvpuType, lastAnnivDur)
+    val id: CvpuId get() = CvpuId(policyNo, coverageNo, ps06Type, cvpuType, lastAnnivDur)
 
     /**
      * 檢查是否為有效狀態
      */
-    fun isActive(): Boolean = statusCode == ProductUnitStatusCode.ACTIVE.code
+    fun isActive(): Boolean = statusCode == CvpuStatusCode.ACTIVE.code
 
     /**
      * 取得總紅利金額 (宣告紅利 + 增值保額紅利)
@@ -83,9 +86,9 @@ data class ProductUnit(
 }
 
 /**
- * 複合主鍵
+ * 複合主鍵 (CV.CVPU)
  */
-data class ProductUnitId(
+data class CvpuId(
     val policyNo: String,
     val coverageNo: Int,
     val ps06Type: String,
@@ -95,10 +98,10 @@ data class ProductUnitId(
     override fun toString(): String = "$policyNo:$coverageNo:$ps06Type:$cvpuType:$lastAnnivDur"
 
     companion object {
-        fun parse(value: String): ProductUnitId {
+        fun parse(value: String): CvpuId {
             val parts = value.split(":")
-            require(parts.size == 5) { "Invalid ProductUnitId format: $value" }
-            return ProductUnitId(
+            require(parts.size == 5) { "Invalid CvpuId format: $value" }
+            return CvpuId(
                 policyNo = parts[0],
                 coverageNo = parts[1].toInt(),
                 ps06Type = parts[2],
@@ -114,17 +117,17 @@ data class ProductUnitId(
  *
  * 對應 CVPU_STATUS_CODE 欄位的 Domain Values
  */
-enum class ProductUnitStatusCode(val code: String, val description: String) {
+enum class CvpuStatusCode(val code: String, val description: String) {
     ACTIVE("1", "有效"),
     PROCESSED("2", "已處理");
 
     companion object {
         private val codeMap = entries.associateBy { it.code }
 
-        fun fromCode(code: String): ProductUnitStatusCode? = codeMap[code]
+        fun fromCode(code: String): CvpuStatusCode? = codeMap[code]
 
-        fun fromCodeOrThrow(code: String): ProductUnitStatusCode =
-            fromCode(code) ?: throw IllegalArgumentException("Unknown ProductUnitStatusCode: $code")
+        fun fromCodeOrThrow(code: String): CvpuStatusCode =
+            fromCode(code) ?: throw IllegalArgumentException("Unknown CvpuStatusCode: $code")
     }
 }
 

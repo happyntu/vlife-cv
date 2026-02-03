@@ -16,24 +16,27 @@ import java.time.LocalDate
 /**
  * 佣金率服務 (CV.CRAT)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 提供佣金率的查詢功能，對應 V3 的 pk_lib_cratproc 功能。
  * 整合 Caffeine 快取，減少資料庫存取。
+ *
+ * 業務別名：CommissionRateService
  *
  * 使用範例：
  * ```kotlin
  * // 依類別碼查詢
- * val rates = commissionRateService.findByClassCode("12RA1")
+ * val rates = cratService.findByClassCode("12RA1")
  *
  * // 查詢有效佣金率
- * val effectiveRates = commissionRateService.findEffectiveRates(
+ * val effectiveRates = cratService.findEffectiveRates(
  *     commClassCode = "12RA1",
  *     commLineCode = "31",
  *     effectiveDate = LocalDate.now()
  * )
  *
  * // 依條件搜尋
- * val results = commissionRateService.search(
- *     CommissionRateQuery(
+ * val results = cratService.search(
+ *     CratQuery(
  *         commLineCode = "31",
  *         effectiveDate = LocalDate.now()
  *     )
@@ -43,7 +46,7 @@ import java.time.LocalDate
  * @see CratMapper Mapper 層（ADR-017 表格導向命名）
  */
 @Service
-class CommissionRateService(
+class CratService(
     private val mapper: CratMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -57,7 +60,7 @@ class CommissionRateService(
      * @return 佣金率資料，不存在時回傳 null
      */
     @Cacheable(value = [CACHE_COMMISSION_RATE_BY_SERIAL], key = "#serial", cacheManager = CV_CACHE_MANAGER)
-    fun findBySerial(serial: Long): CommissionRate? {
+    fun findBySerial(serial: Long): Crat? {
         log.debug("Loading commission rate for serial: {}", serial)
         return mapper.findBySerial(serial)
     }
@@ -71,7 +74,7 @@ class CommissionRateService(
      * @return 佣金率清單
      */
     @Cacheable(value = [CACHE_COMMISSION_RATE_BY_CLASS_CODE], key = "#commClassCode", cacheManager = CV_CACHE_MANAGER)
-    fun findByClassCode(commClassCode: String): List<CommissionRate> {
+    fun findByClassCode(commClassCode: String): List<Crat> {
         log.debug("Loading commission rates for class code: {}", commClassCode)
         return mapper.findByClassCode(commClassCode)
     }
@@ -95,7 +98,7 @@ class CommissionRateService(
         commClassCode: String,
         commLineCode: String,
         effectiveDate: LocalDate
-    ): List<CommissionRate> {
+    ): List<Crat> {
         log.debug(
             "Loading effective commission rates: classCode={}, lineCode={}, date={}",
             commClassCode, commLineCode, effectiveDate
@@ -117,7 +120,7 @@ class CommissionRateService(
         commLineCode: String,
         effectiveDate: LocalDate,
         age: Int
-    ): CommissionRate? {
+    ): Crat? {
         return findEffectiveRates(commClassCode, commLineCode, effectiveDate)
             .filter { it.isAgeInRange(age) }
             .maxByOrNull { it.commRate ?: java.math.BigDecimal.ZERO }
@@ -156,9 +159,9 @@ class CommissionRateService(
      * @param pageRequest 分頁參數
      * @return 分頁結果
      */
-    fun search(query: CommissionRateQuery, pageRequest: PageRequest): PageInfo<CommissionRate> {
+    fun search(query: CratQuery, pageRequest: PageRequest): PageInfo<Crat> {
         log.debug("Searching commission rates with query: {} (page: {})", query, pageRequest.pageNum)
-        return PageHelper.startPage<CommissionRate>(pageRequest.pageNum, pageRequest.pageSize)
+        return PageHelper.startPage<Crat>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo {
                 mapper.search(
                     commClassCode = query.commClassCode,
@@ -177,7 +180,7 @@ class CommissionRateService(
      * @param query 查詢條件
      * @return 符合條件的佣金率清單
      */
-    fun search(query: CommissionRateQuery): List<CommissionRate> {
+    fun search(query: CratQuery): List<Crat> {
         log.debug("Searching commission rates with query: {}", query)
         return mapper.search(
             commClassCode = query.commClassCode,

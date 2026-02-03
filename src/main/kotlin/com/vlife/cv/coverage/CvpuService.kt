@@ -13,19 +13,22 @@ import java.math.BigDecimal
 /**
  * 產品單位 (紅利分配) 服務 (CV.CVPU)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 提供紅利分配記錄的查詢功能。
  * 資料量小 (148 筆)，部分查詢使用快取。
  *
+ * 業務別名：ProductUnitService
+ *
  * 使用範例：
  * ```kotlin
- * val dividends = productUnitService.findByPolicyNo("P000000001")
- * val summary = productUnitService.getDividendSummary("P000000001", 1)
+ * val dividends = cvpuService.findByPolicyNo("P000000001")
+ * val summary = cvpuService.getDividendSummary("P000000001", 1)
  * ```
  *
  * @see CvpuMapper Mapper 層（ADR-017 表格導向命名）
  */
 @Service
-class ProductUnitService(
+class CvpuService(
     private val mapper: CvpuMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -37,12 +40,12 @@ class ProductUnitService(
      * @param pageRequest 分頁參數
      * @return 分頁結果
      */
-    fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<ProductUnit> {
+    fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<Cvpu> {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }
         log.debug("Finding product units for policy: {} (page: {})", policyNo, pageRequest.pageNum)
-        return PageHelper.startPage<ProductUnit>(pageRequest.pageNum, pageRequest.pageSize)
+        return PageHelper.startPage<Cvpu>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByPolicyNo(policyNo) }
     }
 
@@ -52,7 +55,7 @@ class ProductUnitService(
      * @param policyNo 保單號碼
      * @return 紅利分配清單
      */
-    fun findByPolicyNo(policyNo: String): List<ProductUnit> {
+    fun findByPolicyNo(policyNo: String): List<Cvpu> {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }
@@ -67,7 +70,7 @@ class ProductUnitService(
      * @param coverageNo 承保範圍編號
      * @return 紅利分配清單
      */
-    fun findByCoverage(policyNo: String, coverageNo: Int): List<ProductUnit> {
+    fun findByCoverage(policyNo: String, coverageNo: Int): List<Cvpu> {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }
@@ -81,7 +84,7 @@ class ProductUnitService(
      *
      * @return 紅利分配資料，不存在時回傳 null
      */
-    fun findById(id: ProductUnitId): ProductUnit? {
+    fun findById(id: CvpuId): Cvpu? {
         log.debug("Finding product unit: {}", id)
         return mapper.findById(
             policyNo = id.policyNo,
@@ -99,7 +102,7 @@ class ProductUnitService(
      * @param coverageNo 承保範圍編號
      * @return 最新紅利分配記錄，無資料時回傳 null
      */
-    fun findLatestByCoverage(policyNo: String, coverageNo: Int): ProductUnit? {
+    fun findLatestByCoverage(policyNo: String, coverageNo: Int): Cvpu? {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }

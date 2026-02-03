@@ -19,9 +19,12 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 /**
- * 承保範圍與紅利分配 REST API
+ * 承保範圍與紅利分配 REST API (CV.CVCO, CV.CVPU)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 提供 CVCO (承保範圍) 和 CVPU (紅利分配) 的查詢服務。
+ *
+ * 業務別名：CoverageController
  *
  * API 端點：
  * - GET /api/v1/coverages/policy/{policyNo}              - 依保單查詢承保範圍
@@ -34,9 +37,9 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/v1/coverages")
 @Validated
-class CoverageController(
-    private val coverageService: CoverageValueChangeService,
-    private val productUnitService: ProductUnitService
+class CvcoController(
+    private val cvcoService: CvcoService,
+    private val cvpuService: CvpuService
 ) {
 
     companion object {
@@ -57,8 +60,8 @@ class CoverageController(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
-    ): ResponseEntity<ApiResponse<PageResponse<CoverageResponse>>> {
-        val pageInfo = coverageService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
+    ): ResponseEntity<ApiResponse<PageResponse<CvcoResponse>>> {
+        val pageInfo = cvcoService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
         val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
@@ -73,8 +76,8 @@ class CoverageController(
     fun getCoverageById(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @PathVariable @Min(0) coverageNo: Int
-    ): ResponseEntity<ApiResponse<CoverageResponse?>> {
-        val coverage = coverageService.findById(policyNo, coverageNo)
+    ): ResponseEntity<ApiResponse<CvcoResponse?>> {
+        val coverage = cvcoService.findById(policyNo, coverageNo)
         return if (coverage != null) {
             ResponseEntity.ok(ApiResponse.success(coverage.toResponse()))
         } else {
@@ -101,8 +104,8 @@ class CoverageController(
         @PathVariable @Size(min = 1, max = MAX_PLAN_CODE_LENGTH) planCode: String,
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
-    ): ResponseEntity<ApiResponse<PageResponse<CoverageResponse>>> {
-        val pageInfo = coverageService.findByPlanCode(planCode, PageRequest(pageNum, pageSize))
+    ): ResponseEntity<ApiResponse<PageResponse<CvcoResponse>>> {
+        val pageInfo = cvcoService.findByPlanCode(planCode, PageRequest(pageNum, pageSize))
         val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
@@ -119,8 +122,8 @@ class CoverageController(
         @PathVariable @Size(min = 1, max = MAX_STATUS_CODE_LENGTH) statusCode: String,
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
-    ): ResponseEntity<ApiResponse<PageResponse<CoverageResponse>>> {
-        val pageInfo = coverageService.findByStatusCode(statusCode, PageRequest(pageNum, pageSize))
+    ): ResponseEntity<ApiResponse<PageResponse<CvcoResponse>>> {
+        val pageInfo = cvcoService.findByStatusCode(statusCode, PageRequest(pageNum, pageSize))
         val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
@@ -130,7 +133,7 @@ class CoverageController(
      */
     @GetMapping("/plan-codes")
     fun getAllPlanCodes(): ResponseEntity<ApiResponse<List<String>>> {
-        val planCodes = coverageService.findAllPlanCodes()
+        val planCodes = cvcoService.findAllPlanCodes()
         return ResponseEntity.ok(ApiResponse.success(planCodes))
     }
 
@@ -144,8 +147,8 @@ class CoverageController(
     fun getDividends(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @PathVariable @Min(0) coverageNo: Int
-    ): ResponseEntity<ApiResponse<List<ProductUnitResponse>>> {
-        val productUnits = productUnitService.findByCoverage(policyNo, coverageNo)
+    ): ResponseEntity<ApiResponse<List<CvpuResponse>>> {
+        val productUnits = cvpuService.findByCoverage(policyNo, coverageNo)
         val response = productUnits.map { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
@@ -161,7 +164,7 @@ class CoverageController(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @PathVariable @Min(0) coverageNo: Int
     ): ResponseEntity<ApiResponse<DividendSummaryResponse>> {
-        val summary = productUnitService.getDividendSummary(policyNo, coverageNo)
+        val summary = cvpuService.getDividendSummary(policyNo, coverageNo)
         return ResponseEntity.ok(ApiResponse.success(summary.toResponse()))
     }
 
@@ -177,13 +180,13 @@ class CoverageController(
         @PathVariable @Size(min = 1, max = MAX_POLICY_NO_LENGTH) @Pattern(regexp = "^[A-Z0-9]+$") policyNo: String,
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
-    ): ResponseEntity<ApiResponse<PageResponse<ProductUnitResponse>>> {
-        val pageInfo = productUnitService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
+    ): ResponseEntity<ApiResponse<PageResponse<CvpuResponse>>> {
+        val pageInfo = cvpuService.findByPolicyNo(policyNo, PageRequest(pageNum, pageSize))
         val response = PageResponse.from(pageInfo) { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
     }
 
-    private fun CoverageValueChange.toResponse() = CoverageResponse(
+    private fun Cvco.toResponse() = CvcoResponse(
         policyNo = policyNo,
         coverageNo = coverageNo,
         planCode = planCode,
@@ -204,14 +207,14 @@ class CoverageController(
         isActive = isActive()
     )
 
-    private fun ProductUnit.toResponse() = ProductUnitResponse(
+    private fun Cvpu.toResponse() = CvpuResponse(
         policyNo = policyNo,
         coverageNo = coverageNo,
         ps06Type = ps06Type,
         cvpuType = cvpuType,
         lastAnnivDur = lastAnnivDur,
         statusCode = statusCode,
-        statusDesc = statusCode?.let { ProductUnitStatusCode.fromCode(it)?.description },
+        statusDesc = statusCode?.let { CvpuStatusCode.fromCode(it)?.description },
         divDeclare = divDeclare,
         divPuaAmt = divPuaAmt,
         totalDividend = getTotalDividend(),
@@ -235,9 +238,9 @@ class CoverageController(
 }
 
 /**
- * 承保範圍 API 回應格式
+ * 承保範圍 API 回應格式 (CV.CVCO)
  */
-data class CoverageResponse(
+data class CvcoResponse(
     val policyNo: String,
     val coverageNo: Int,
     val planCode: String,
@@ -259,9 +262,9 @@ data class CoverageResponse(
 )
 
 /**
- * 紅利分配 API 回應格式
+ * 紅利分配 API 回應格式 (CV.CVPU)
  */
-data class ProductUnitResponse(
+data class CvpuResponse(
     val policyNo: String,
     val coverageNo: Int,
     val ps06Type: String,

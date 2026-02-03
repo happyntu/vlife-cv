@@ -20,9 +20,12 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 /**
- * 佣金率 REST API
+ * 佣金率 REST API (CV.CRAT)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 提供佣金率的查詢服務，供業管 (AG) 及其他業務模組呼叫。
+ *
+ * 業務別名：CommissionRateController
  *
  * API 端點：
  * - GET /api/v1/commission-rates                    - 搜尋佣金率
@@ -36,8 +39,8 @@ import java.time.LocalDate
 @RestController
 @RequestMapping("/api/v1/commission-rates")
 @Validated
-class CommissionRateController(
-    private val service: CommissionRateService
+class CratController(
+    private val service: CratService
 ) {
 
     companion object {
@@ -64,8 +67,8 @@ class CommissionRateController(
         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) effectiveDate: LocalDate?,
         @RequestParam(defaultValue = "1") @Min(1) pageNum: Int,
         @RequestParam(defaultValue = "20") @Min(1) @Max(100) pageSize: Int
-    ): ResponseEntity<ApiResponse<PageResponse<CommissionRateResponse>>> {
-        val query = CommissionRateQuery(
+    ): ResponseEntity<ApiResponse<PageResponse<CratResponse>>> {
+        val query = CratQuery(
             commClassCode = commClassCode,
             commLineCode = commLineCode,
             cratType = cratType,
@@ -84,7 +87,7 @@ class CommissionRateController(
     @GetMapping("/{serial}")
     fun getBySerial(
         @PathVariable serial: Long
-    ): ResponseEntity<ApiResponse<CommissionRateResponse?>> {
+    ): ResponseEntity<ApiResponse<CratResponse?>> {
         val rate = service.findBySerial(serial)
         return if (rate != null) {
             ResponseEntity.ok(ApiResponse.success(rate.toResponse()))
@@ -108,7 +111,7 @@ class CommissionRateController(
     @GetMapping("/class/{classCode}")
     fun getByClassCode(
         @PathVariable @Size(min = 1, max = MAX_CLASS_CODE_LENGTH) classCode: String
-    ): ResponseEntity<ApiResponse<List<CommissionRateResponse>>> {
+    ): ResponseEntity<ApiResponse<List<CratResponse>>> {
         val rates = service.findByClassCode(classCode)
         val response = rates.map { it.toResponse() }
         return ResponseEntity.ok(ApiResponse.success(response))
@@ -128,7 +131,7 @@ class CommissionRateController(
         @RequestParam @Size(min = 1, max = MAX_LINE_CODE_LENGTH) commLineCode: String,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) effectiveDate: LocalDate,
         @RequestParam(required = false) @Min(0) @Max(150) age: Int?
-    ): ResponseEntity<ApiResponse<List<CommissionRateResponse>>> {
+    ): ResponseEntity<ApiResponse<List<CratResponse>>> {
         val rates = if (age != null) {
             val rate = service.findEffectiveRateForAge(commClassCode, commLineCode, effectiveDate, age)
             if (rate != null) listOf(rate) else emptyList()
@@ -162,7 +165,7 @@ class CommissionRateController(
     fun getAllCratTypes(): ResponseEntity<ApiResponse<List<CratTypeResponse>>> {
         val types = service.findAllCratTypes()
         val response = types.map { code ->
-            val enumValue = CommissionRateType.fromCode(code)
+            val enumValue = CratType.fromCode(code)
             CratTypeResponse(
                 code = code,
                 description = enumValue?.description
@@ -195,13 +198,13 @@ class CommissionRateController(
         return ResponseEntity.ok(ApiResponse.success("Cache refreshed"))
     }
 
-    private fun CommissionRate.toResponse() = CommissionRateResponse(
+    private fun Crat.toResponse() = CratResponse(
         serial = serial,
         commClassCode = commClassCode,
         commLineCode = commLineCode,
         commLineCodeDesc = CommissionLineCode.fromCode(commLineCode)?.description,
         cratType = cratType,
-        cratTypeDesc = CommissionRateType.fromCode(cratType)?.description,
+        cratTypeDesc = CratType.fromCode(cratType)?.description,
         projectNo = projectNo,
         startDate = startDate,
         endDate = endDate,
@@ -221,9 +224,9 @@ class CommissionRateController(
 }
 
 /**
- * 佣金率 API 回應格式
+ * 佣金率 API 回應格式 (CV.CRAT)
  */
-data class CommissionRateResponse(
+data class CratResponse(
     val serial: Long,
     val commClassCode: String,
     val commLineCode: String,

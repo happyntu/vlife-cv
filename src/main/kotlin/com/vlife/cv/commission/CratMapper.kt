@@ -22,7 +22,7 @@ interface CratMapper {
      * @param serial 序號 (主鍵)
      * @return 佣金率資料，不存在時回傳 null
      */
-    fun findBySerial(@Param("serial") serial: Long): CommissionRate?
+    fun findBySerial(@Param("serial") serial: Long): Crat?
 
     /**
      * 依佣金類別碼查詢佣金率清單
@@ -30,7 +30,7 @@ interface CratMapper {
      * @param commClassCode 佣金率類別碼
      * @return 佣金率清單
      */
-    fun findByClassCode(@Param("commClassCode") commClassCode: String): List<CommissionRate>
+    fun findByClassCode(@Param("commClassCode") commClassCode: String): List<Crat>
 
     /**
      * 查詢指定日期有效的佣金率
@@ -44,7 +44,7 @@ interface CratMapper {
         @Param("commClassCode") commClassCode: String,
         @Param("commLineCode") commLineCode: String,
         @Param("effectiveDate") effectiveDate: LocalDate
-    ): List<CommissionRate>
+    ): List<Crat>
 
     /**
      * 依業務線代號查詢所有佣金率類別碼
@@ -84,7 +84,7 @@ interface CratMapper {
         @Param("commLineCode") commLineCode: String?,
         @Param("cratType") cratType: String?,
         @Param("effectiveDate") effectiveDate: LocalDate?
-    ): List<CommissionRate>
+    ): List<Crat>
 
     /**
      * 計算指定佣金類別碼的資料筆數

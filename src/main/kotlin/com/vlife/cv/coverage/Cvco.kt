@@ -3,15 +3,18 @@ package com.vlife.cv.coverage
 import java.time.LocalDate
 
 /**
- * 保單基礎值變化檔 (CVCO)
+ * 保單基礎值變化檔 Entity (CV.CVCO)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 對應 V3.CVCO 表格，追蹤保單承保範圍的狀態變化歷史。
  * 資料量：3,800 筆，單一模組使用。
  *
+ * 業務別名：CoverageValueChange
+ *
  * 使用範例：
  * ```kotlin
- * val coverages = coverageValueChangeService.findByPolicyNo("P000000001")
- * val coverage = coverageValueChangeService.findById("P000000001", 1)
+ * val coverages = cvcoService.findByPolicyNo("P000000001")
+ * val coverage = cvcoService.findById("P000000001", 1)
  * ```
  *
  * @property policyNo 保單號碼 (PK, 10 碼)
@@ -30,7 +33,7 @@ import java.time.LocalDate
  * @property policyType 保單類型 (可空)
  * @property statusCode2 承保狀態碼2 (可空)
  */
-data class CoverageValueChange(
+data class Cvco(
     val policyNo: String,
     val coverageNo: Int,
     val planCode: String,
@@ -71,7 +74,7 @@ data class CoverageValueChange(
     /**
      * 複合主鍵
      */
-    val id: CoverageValueChangeId get() = CoverageValueChangeId(policyNo, coverageNo)
+    val id: CvcoId get() = CvcoId(policyNo, coverageNo)
 
     /**
      * 檢查是否為有效狀態
@@ -90,19 +93,19 @@ data class CoverageValueChange(
 }
 
 /**
- * 複合主鍵
+ * 複合主鍵 (CV.CVCO)
  */
-data class CoverageValueChangeId(
+data class CvcoId(
     val policyNo: String,
     val coverageNo: Int
 ) {
     override fun toString(): String = "$policyNo:$coverageNo"
 
     companion object {
-        fun parse(value: String): CoverageValueChangeId {
+        fun parse(value: String): CvcoId {
             val parts = value.split(":")
-            require(parts.size == 2) { "Invalid CoverageValueChangeId format: $value" }
-            return CoverageValueChangeId(parts[0], parts[1].toInt())
+            require(parts.size == 2) { "Invalid CvcoId format: $value" }
+            return CvcoId(parts[0], parts[1].toInt())
         }
     }
 }

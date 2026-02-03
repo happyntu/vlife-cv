@@ -15,22 +15,22 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * CommissionRateService 單元測試
+ * CratService 單元測試
  *
  * 注意：PageHelper 分頁功能使用 ThreadLocal 機制，難以在單元測試中模擬。
  * 因此不分頁版本直接調用 Mapper，分頁版本應透過整合測試驗證。
  * 參見 ADR-015 測試策略說明。
  */
-@DisplayName("CommissionRateService 單元測試")
-class CommissionRateServiceTest {
+@DisplayName("CratService 單元測試")
+class CratServiceTest {
 
     private lateinit var mapper: CratMapper
-    private lateinit var service: CommissionRateService
+    private lateinit var service: CratService
 
     @BeforeEach
     fun setup() {
         mapper = mockk()
-        service = CommissionRateService(mapper)
+        service = CratService(mapper)
     }
 
     private fun createTestRate(
@@ -43,7 +43,7 @@ class CommissionRateServiceTest {
         commRate: BigDecimal? = BigDecimal("5.0000"),
         commStartAge: Int? = 20,
         commEndAge: Int? = 65
-    ) = CommissionRate(
+    ) = Crat(
         serial = serial,
         commClassCode = commClassCode,
         commLineCode = commLineCode,
@@ -250,7 +250,7 @@ class CommissionRateServiceTest {
             } returns rates
 
             // When
-            val query = CommissionRateQuery(
+            val query = CratQuery(
                 commClassCode = "12RA1",
                 commLineCode = "31",
                 cratType = "1",
@@ -275,7 +275,7 @@ class CommissionRateServiceTest {
             } returns rates
 
             // When
-            val query = CommissionRateQuery(commLineCode = "31")
+            val query = CratQuery(commLineCode = "31")
             val result = service.search(query)
 
             // Then
@@ -284,8 +284,8 @@ class CommissionRateServiceTest {
     }
 }
 
-@DisplayName("CommissionRate 單元測試")
-class CommissionRateTest {
+@DisplayName("Crat 單元測試")
+class CratTest {
 
     private fun createTestRate(
         startDate: LocalDate = LocalDate.of(2020, 1, 1),
@@ -294,7 +294,7 @@ class CommissionRateTest {
         commEndAge: Int? = 65,
         commStartYear: Int? = 1,
         commEndYear: Int? = 10
-    ) = CommissionRate(
+    ) = Crat(
         serial = 1L,
         commClassCode = "12RA1",
         commLineCode = "31",
@@ -469,19 +469,19 @@ class CommissionLineCodeTest {
     }
 }
 
-@DisplayName("CommissionRateType 列舉測試")
-class CommissionRateTypeTest {
+@DisplayName("CratType 列舉測試")
+class CratTypeTest {
 
     @Test
     fun `should find type by code`() {
-        val result = CommissionRateType.fromCode("1")
-        assertEquals(CommissionRateType.GENERAL, result)
+        val result = CratType.fromCode("1")
+        assertEquals(CratType.GENERAL, result)
         assertEquals("一般佣金_折算率", result?.description)
     }
 
     @Test
     fun `should return null for unknown type`() {
-        val result = CommissionRateType.fromCode("X")
+        val result = CratType.fromCode("X")
         assertNull(result)
     }
 }

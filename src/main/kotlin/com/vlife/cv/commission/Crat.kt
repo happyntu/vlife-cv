@@ -4,15 +4,18 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 /**
- * 佣金率檔 (CRAT)
+ * 佣金率檔 Entity (CV.CRAT)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 對應 V3.CRAT 表格，用於佣金計算與業績報表。
  * 資料量：53,108 筆，被 AG、CV 模組使用。
  *
+ * 業務別名：CommissionRate
+ *
  * 使用範例：
  * ```kotlin
- * val rates = commissionRateService.findByClassCode("12RA1")
- * val rate = commissionRateService.findEffectiveRate(
+ * val rates = cratService.findByClassCode("12RA1")
+ * val rate = cratService.findEffectiveRate(
  *     commClassCode = "12RA1",
  *     commLineCode = "31",
  *     effectiveDate = LocalDate.now()
@@ -39,7 +42,7 @@ import java.time.LocalDate
  * @property premLimitStart 保費下限 (可空)
  * @property premLimitEnd 保費上限 (可空)
  */
-data class CommissionRate(
+data class Crat(
     val serial: Long,
     val commClassCode: String,
     val commLineCode: String,
@@ -109,7 +112,7 @@ data class CommissionRate(
 /**
  * 佣金率查詢條件
  */
-data class CommissionRateQuery(
+data class CratQuery(
     val commClassCode: String? = null,
     val commLineCode: String? = null,
     val cratType: String? = null,
@@ -147,7 +150,7 @@ enum class CommissionLineCode(val code: String, val description: String) {
  *
  * 對應 CRAT_TYPE 欄位的 Domain Values
  */
-enum class CommissionRateType(val code: String, val description: String) {
+enum class CratType(val code: String, val description: String) {
     GENERAL("1", "一般佣金_折算率"),
     EXTENSION_DIFF("9", "展代佣金率差額"),
     TYPE_6("6", "類型6"),
@@ -158,9 +161,9 @@ enum class CommissionRateType(val code: String, val description: String) {
     companion object {
         private val codeMap = entries.associateBy { it.code }
 
-        fun fromCode(code: String): CommissionRateType? = codeMap[code]
+        fun fromCode(code: String): CratType? = codeMap[code]
 
-        fun fromCodeOrThrow(code: String): CommissionRateType =
-            fromCode(code) ?: throw IllegalArgumentException("Unknown CommissionRateType: $code")
+        fun fromCodeOrThrow(code: String): CratType =
+            fromCode(code) ?: throw IllegalArgumentException("Unknown CratType: $code")
     }
 }

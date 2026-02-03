@@ -9,19 +9,22 @@ import org.springframework.stereotype.Service
 /**
  * 保單基礎值變化服務 (CV.CVCO)
  *
+ * 遵循 ADR-017 規範，採用表格導向命名。
  * 提供承保範圍狀態變化的查詢功能。
  * 資料量適中 (3,800 筆)，未使用快取。
  *
+ * 業務別名：CoverageValueChangeService
+ *
  * 使用範例：
  * ```kotlin
- * val coverages = coverageValueChangeService.findByPolicyNo("P000000001")
+ * val coverages = cvcoService.findByPolicyNo("P000000001")
  * val activeCoverages = coverages.filter { it.isActive() }
  * ```
  *
  * @see CvcoMapper Mapper 層（ADR-017 表格導向命名）
  */
 @Service
-class CoverageValueChangeService(
+class CvcoService(
     private val mapper: CvcoMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -33,12 +36,12 @@ class CoverageValueChangeService(
      * @param pageRequest 分頁參數
      * @return 分頁結果
      */
-    fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<CoverageValueChange> {
+    fun findByPolicyNo(policyNo: String, pageRequest: PageRequest): PageInfo<Cvco> {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }
         log.debug("Finding coverages for policy: {} (page: {})", policyNo, pageRequest.pageNum)
-        return PageHelper.startPage<CoverageValueChange>(pageRequest.pageNum, pageRequest.pageSize)
+        return PageHelper.startPage<Cvco>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByPolicyNo(policyNo) }
     }
 
@@ -48,7 +51,7 @@ class CoverageValueChangeService(
      * @param policyNo 保單號碼
      * @return 承保範圍清單
      */
-    fun findByPolicyNo(policyNo: String): List<CoverageValueChange> {
+    fun findByPolicyNo(policyNo: String): List<Cvco> {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }
@@ -63,7 +66,7 @@ class CoverageValueChangeService(
      * @param coverageNo 承保範圍編號
      * @return 承保範圍資料，不存在時回傳 null
      */
-    fun findById(policyNo: String, coverageNo: Int): CoverageValueChange? {
+    fun findById(policyNo: String, coverageNo: Int): Cvco? {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }
@@ -79,12 +82,12 @@ class CoverageValueChangeService(
      * @param pageRequest 分頁參數
      * @return 分頁結果
      */
-    fun findByPlanCode(planCode: String, pageRequest: PageRequest): PageInfo<CoverageValueChange> {
+    fun findByPlanCode(planCode: String, pageRequest: PageRequest): PageInfo<Cvco> {
         require(planCode.isNotBlank() && planCode.length <= 5) {
             "planCode must be non-blank and at most 5 characters"
         }
         log.debug("Finding coverages for plan code: {} (page: {})", planCode, pageRequest.pageNum)
-        return PageHelper.startPage<CoverageValueChange>(pageRequest.pageNum, pageRequest.pageSize)
+        return PageHelper.startPage<Cvco>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByPlanCode(planCode) }
     }
 
@@ -94,7 +97,7 @@ class CoverageValueChangeService(
      * @param planCode 險種代碼
      * @return 承保範圍清單
      */
-    fun findByPlanCode(planCode: String): List<CoverageValueChange> {
+    fun findByPlanCode(planCode: String): List<Cvco> {
         require(planCode.isNotBlank() && planCode.length <= 5) {
             "planCode must be non-blank and at most 5 characters"
         }
@@ -109,12 +112,12 @@ class CoverageValueChangeService(
      * @param pageRequest 分頁參數
      * @return 分頁結果
      */
-    fun findByStatusCode(statusCode: String, pageRequest: PageRequest): PageInfo<CoverageValueChange> {
+    fun findByStatusCode(statusCode: String, pageRequest: PageRequest): PageInfo<Cvco> {
         require(statusCode.isNotBlank() && statusCode.length <= 1) {
             "statusCode must be exactly 1 character"
         }
         log.debug("Finding coverages by status: {} (page: {})", statusCode, pageRequest.pageNum)
-        return PageHelper.startPage<CoverageValueChange>(pageRequest.pageNum, pageRequest.pageSize)
+        return PageHelper.startPage<Cvco>(pageRequest.pageNum, pageRequest.pageSize)
             .doSelectPageInfo { mapper.findByStatusCode(statusCode) }
     }
 
@@ -124,7 +127,7 @@ class CoverageValueChangeService(
      * @param statusCode 承保狀態碼
      * @return 承保範圍清單
      */
-    fun findByStatusCode(statusCode: String): List<CoverageValueChange> {
+    fun findByStatusCode(statusCode: String): List<Cvco> {
         require(statusCode.isNotBlank() && statusCode.length <= 1) {
             "statusCode must be exactly 1 character"
         }
@@ -139,7 +142,7 @@ class CoverageValueChangeService(
      * @param pageRequest 分頁參數
      * @return 分頁結果
      */
-    fun findByStatus(status: CoverageStatusCode, pageRequest: PageRequest): PageInfo<CoverageValueChange> =
+    fun findByStatus(status: CoverageStatusCode, pageRequest: PageRequest): PageInfo<Cvco> =
         findByStatusCode(status.code, pageRequest)
 
     /**
@@ -148,7 +151,7 @@ class CoverageValueChangeService(
      * @param status 承保狀態列舉
      * @return 承保範圍清單
      */
-    fun findByStatus(status: CoverageStatusCode): List<CoverageValueChange> =
+    fun findByStatus(status: CoverageStatusCode): List<Cvco> =
         findByStatusCode(status.code)
 
     /**
@@ -190,7 +193,7 @@ class CoverageValueChangeService(
      * @param policyNo 保單號碼
      * @return 有效承保範圍清單
      */
-    fun findActiveCoverages(policyNo: String): List<CoverageValueChange> {
+    fun findActiveCoverages(policyNo: String): List<Cvco> {
         require(policyNo.isNotBlank() && policyNo.length <= 10) {
             "policyNo must be non-blank and at most 10 characters"
         }

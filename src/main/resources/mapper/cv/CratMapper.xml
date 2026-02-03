@@ -36,7 +36,7 @@
     <!--
         依序號查詢佣金率
     -->
-    <select id="findBySerial" resultType="com.vlife.cv.commission.CommissionRate">
+    <select id="findBySerial" resultType="com.vlife.cv.commission.Crat">
         SELECT <include refid="commissionRateColumns"/>
         FROM CV.CRAT
         WHERE CRAT_SERIAL = #{serial}
@@ -45,7 +45,7 @@
     <!--
         依佣金類別碼查詢佣金率清單
     -->
-    <select id="findByClassCode" resultType="com.vlife.cv.commission.CommissionRate">
+    <select id="findByClassCode" resultType="com.vlife.cv.commission.Crat">
         SELECT <include refid="commissionRateColumns"/>
         FROM CV.CRAT
         WHERE COMM_CLASS_CODE = #{commClassCode}
@@ -55,7 +55,7 @@
     <!--
         查詢指定日期有效的佣金率
     -->
-    <select id="findEffectiveRates" resultType="com.vlife.cv.commission.CommissionRate">
+    <select id="findEffectiveRates" resultType="com.vlife.cv.commission.Crat">
         SELECT <include refid="commissionRateColumns"/>
         FROM CV.CRAT
         WHERE COMM_CLASS_CODE = #{commClassCode}
@@ -98,7 +98,7 @@
 
         注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
     -->
-    <select id="search" resultType="com.vlife.cv.commission.CommissionRate">
+    <select id="search" resultType="com.vlife.cv.commission.Crat">
         SELECT <include refid="commissionRateColumns"/>
         FROM CV.CRAT
         <where>

@@ -34,7 +34,7 @@
 
         注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
     -->
-    <select id="findByPolicyNo" resultType="com.vlife.cv.coverage.CoverageValueChange">
+    <select id="findByPolicyNo" resultType="com.vlife.cv.coverage.Cvco">
         SELECT <include refid="coverageColumns"/>
         FROM CV.CVCO
         WHERE POLICY_NO = #{policyNo}
@@ -44,7 +44,7 @@
     <!--
         依主鍵查詢單筆承保範圍
     -->
-    <select id="findById" resultType="com.vlife.cv.coverage.CoverageValueChange">
+    <select id="findById" resultType="com.vlife.cv.coverage.Cvco">
         SELECT <include refid="coverageColumns"/>
         FROM CV.CVCO
         WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
@@ -55,7 +55,7 @@
 
         注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
     -->
-    <select id="findByPlanCode" resultType="com.vlife.cv.coverage.CoverageValueChange">
+    <select id="findByPlanCode" resultType="com.vlife.cv.coverage.Cvco">
         SELECT <include refid="coverageColumns"/>
         FROM CV.CVCO
         WHERE PLAN_CODE = #{planCode}
@@ -67,7 +67,7 @@
 
         注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
     -->
-    <select id="findByStatusCode" resultType="com.vlife.cv.coverage.CoverageValueChange">
+    <select id="findByStatusCode" resultType="com.vlife.cv.coverage.Cvco">
         SELECT <include refid="coverageColumns"/>
         FROM CV.CVCO
         WHERE CO_STATUS_CODE = #{statusCode}

@@ -23,7 +23,7 @@ interface CvcoMapper {
      * @param policyNo 保單號碼
      * @return 承保範圍清單
      */
-    fun findByPolicyNo(@Param("policyNo") policyNo: String): List<CoverageValueChange>
+    fun findByPolicyNo(@Param("policyNo") policyNo: String): List<Cvco>
 
     /**
      * 依主鍵查詢單筆承保範圍
@@ -35,7 +35,7 @@ interface CvcoMapper {
     fun findById(
         @Param("policyNo") policyNo: String,
         @Param("coverageNo") coverageNo: Int
-    ): CoverageValueChange?
+    ): Cvco?
 
     /**
      * 依險種代碼查詢承保範圍
@@ -45,7 +45,7 @@ interface CvcoMapper {
      * @param planCode 險種代碼
      * @return 承保範圍清單
      */
-    fun findByPlanCode(@Param("planCode") planCode: String): List<CoverageValueChange>
+    fun findByPlanCode(@Param("planCode") planCode: String): List<Cvco>
 
     /**
      * 依承保狀態碼查詢承保範圍
@@ -55,7 +55,7 @@ interface CvcoMapper {
      * @param statusCode 承保狀態碼
      * @return 承保範圍清單
      */
-    fun findByStatusCode(@Param("statusCode") statusCode: String): List<CoverageValueChange>
+    fun findByStatusCode(@Param("statusCode") statusCode: String): List<Cvco>
 
     /**
      * 查詢所有不重複的險種代碼

@@ -15,22 +15,22 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * CoverageValueChangeService 單元測試
+ * CvcoService 單元測試
  *
  * 注意：PageHelper 分頁功能使用 ThreadLocal 機制，難以在單元測試中模擬。
  * 因此不分頁版本直接調用 Mapper，分頁版本應透過整合測試驗證。
  * 參見 ADR-015 測試策略說明。
  */
-@DisplayName("CoverageValueChangeService 單元測試")
-class CoverageValueChangeServiceTest {
+@DisplayName("CvcoService 單元測試")
+class CvcoServiceTest {
 
     private lateinit var mapper: CvcoMapper
-    private lateinit var service: CoverageValueChangeService
+    private lateinit var service: CvcoService
 
     @BeforeEach
     fun setup() {
         mapper = mockk()
-        service = CoverageValueChangeService(mapper)
+        service = CvcoService(mapper)
     }
 
     private fun createTestCoverage(
@@ -38,7 +38,7 @@ class CoverageValueChangeServiceTest {
         coverageNo: Int = 1,
         planCode: String = "A1001",
         statusCode: String = "P"
-    ) = CoverageValueChange(
+    ) = Cvco(
         policyNo = policyNo,
         coverageNo = coverageNo,
         planCode = planCode,
@@ -222,22 +222,22 @@ class CoverageValueChangeServiceTest {
 }
 
 /**
- * ProductUnitService 單元測試
+ * CvpuService 單元測試
  *
  * 注意：PageHelper 分頁功能使用 ThreadLocal 機制，難以在單元測試中模擬。
  * 因此不分頁版本直接調用 Mapper，分頁版本應透過整合測試驗證。
  * 參見 ADR-015 測試策略說明。
  */
-@DisplayName("ProductUnitService 單元測試")
-class ProductUnitServiceTest {
+@DisplayName("CvpuService 單元測試")
+class CvpuServiceTest {
 
     private lateinit var mapper: CvpuMapper
-    private lateinit var service: ProductUnitService
+    private lateinit var service: CvpuService
 
     @BeforeEach
     fun setup() {
         mapper = mockk()
-        service = ProductUnitService(mapper)
+        service = CvpuService(mapper)
     }
 
     private fun createTestProductUnit(
@@ -246,7 +246,7 @@ class ProductUnitServiceTest {
         lastAnnivDur: Int = 1,
         divDeclare: BigDecimal = BigDecimal("1000.00"),
         divPuaAmt: BigDecimal = BigDecimal("500.0000")
-    ) = ProductUnit(
+    ) = Cvpu(
         policyNo = policyNo,
         coverageNo = coverageNo,
         ps06Type = "1",
@@ -362,12 +362,12 @@ class ProductUnitServiceTest {
     }
 }
 
-@DisplayName("CoverageValueChange 單元測試")
-class CoverageValueChangeTest {
+@DisplayName("Cvco 單元測試")
+class CvcoTest {
 
     private fun createTestCoverage(
         statusCode: String = "P"
-    ) = CoverageValueChange(
+    ) = Cvco(
         policyNo = "P000000001",
         coverageNo = 1,
         planCode = "A1001",
@@ -451,10 +451,10 @@ class CoverageValueChangeTest {
     }
 }
 
-@DisplayName("ProductUnit 單元測試")
-class ProductUnitTest {
+@DisplayName("Cvpu 單元測試")
+class CvpuTest {
 
-    private fun createTestProductUnit() = ProductUnit(
+    private fun createTestProductUnit() = Cvpu(
         policyNo = "P000000001",
         coverageNo = 1,
         ps06Type = "1",
@@ -524,13 +524,13 @@ class InsuranceType3Test {
     }
 }
 
-@DisplayName("ProductUnitStatusCode 列舉測試")
-class ProductUnitStatusCodeTest {
+@DisplayName("CvpuStatusCode 列舉測試")
+class CvpuStatusCodeTest {
 
     @Test
     fun `should find status by code`() {
-        val result = ProductUnitStatusCode.fromCode("1")
-        assertEquals(ProductUnitStatusCode.ACTIVE, result)
+        val result = CvpuStatusCode.fromCode("1")
+        assertEquals(CvpuStatusCode.ACTIVE, result)
         assertEquals("有效", result?.description)
     }
 }

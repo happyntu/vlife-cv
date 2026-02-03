@@ -24,7 +24,7 @@ interface CvpuMapper {
      * @param policyNo 保單號碼
      * @return 紅利分配清單
      */
-    fun findByPolicyNo(@Param("policyNo") policyNo: String): List<ProductUnit>
+    fun findByPolicyNo(@Param("policyNo") policyNo: String): List<Cvpu>
 
     /**
      * 依保單號碼和承保範圍編號查詢紅利分配記錄
@@ -36,7 +36,7 @@ interface CvpuMapper {
     fun findByCoverage(
         @Param("policyNo") policyNo: String,
         @Param("coverageNo") coverageNo: Int
-    ): List<ProductUnit>
+    ): List<Cvpu>
 
     /**
      * 依主鍵查詢單筆紅利分配記錄
@@ -49,7 +49,7 @@ interface CvpuMapper {
         @Param("ps06Type") ps06Type: String,
         @Param("cvpuType") cvpuType: String,
         @Param("lastAnnivDur") lastAnnivDur: Int
-    ): ProductUnit?
+    ): Cvpu?
 
     /**
      * 計算指定承保範圍的宣告紅利總和
@@ -97,5 +97,5 @@ interface CvpuMapper {
     fun findLatestByCoverage(
         @Param("policyNo") policyNo: String,
         @Param("coverageNo") coverageNo: Int
-    ): ProductUnit?
+    ): Cvpu?
 }

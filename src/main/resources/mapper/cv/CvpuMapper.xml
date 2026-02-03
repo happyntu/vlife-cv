@@ -34,7 +34,7 @@
 
         注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
     -->
-    <select id="findByPolicyNo" resultType="com.vlife.cv.coverage.ProductUnit">
+    <select id="findByPolicyNo" resultType="com.vlife.cv.coverage.Cvpu">
         SELECT <include refid="productUnitColumns"/>
         FROM CV.CVPU
         WHERE POLICY_NO = #{policyNo}
@@ -44,7 +44,7 @@
     <!--
         依保單號碼和承保範圍編號查詢紅利分配記錄
     -->
-    <select id="findByCoverage" resultType="com.vlife.cv.coverage.ProductUnit">
+    <select id="findByCoverage" resultType="com.vlife.cv.coverage.Cvpu">
         SELECT <include refid="productUnitColumns"/>
         FROM CV.CVPU
         WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
@@ -54,7 +54,7 @@
     <!--
         依主鍵查詢單筆紅利分配記錄
     -->
-    <select id="findById" resultType="com.vlife.cv.coverage.ProductUnit">
+    <select id="findById" resultType="com.vlife.cv.coverage.Cvpu">
         SELECT <include refid="productUnitColumns"/>
         FROM CV.CVPU
         WHERE POLICY_NO = #{policyNo}
@@ -94,7 +94,7 @@
     <!--
         查詢最新週年期間的紅利分配記錄
     -->
-    <select id="findLatestByCoverage" resultType="com.vlife.cv.coverage.ProductUnit">
+    <select id="findLatestByCoverage" resultType="com.vlife.cv.coverage.Cvpu">
         SELECT <include refid="productUnitColumns"/>
         FROM CV.CVPU
         WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}

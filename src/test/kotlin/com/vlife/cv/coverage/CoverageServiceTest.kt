@@ -24,7 +24,7 @@ import kotlin.test.assertTrue
 @DisplayName("CoverageValueChangeService 單元測試")
 class CoverageValueChangeServiceTest {
 
-    private lateinit var mapper: CoverageValueChangeMapper
+    private lateinit var mapper: CvcoMapper
     private lateinit var service: CoverageValueChangeService
 
     @BeforeEach
@@ -231,7 +231,7 @@ class CoverageValueChangeServiceTest {
 @DisplayName("ProductUnitService 單元測試")
 class ProductUnitServiceTest {
 
-    private lateinit var mapper: ProductUnitMapper
+    private lateinit var mapper: CvpuMapper
     private lateinit var service: ProductUnitService
 
     @BeforeEach

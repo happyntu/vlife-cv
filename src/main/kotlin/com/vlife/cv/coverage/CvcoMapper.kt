@@ -4,15 +4,16 @@ import org.apache.ibatis.annotations.Mapper
 import org.apache.ibatis.annotations.Param
 
 /**
- * 保單基礎值變化 MyBatis Mapper
+ * 保單基礎值變化表 Mapper (CV.CVCO)
  *
  * 遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
  * 遵循 ADR-016 規範，SQL 集中於 XML 管理。
+ * 遵循 ADR-017 規範，Mapper 名稱對應資料庫表格名稱。
  *
- * @see resources/mapper/cv/CoverageValueChangeMapper.xml
+ * @see resources/mapper/cv/CvcoMapper.xml
  */
 @Mapper
-interface CoverageValueChangeMapper {
+interface CvcoMapper {
 
     /**
      * 依保單號碼查詢所有承保範圍

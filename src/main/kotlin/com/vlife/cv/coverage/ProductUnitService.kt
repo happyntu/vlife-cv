@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 import java.math.BigDecimal
 
 /**
- * 產品單位 (紅利分配) 服務
+ * 產品單位 (紅利分配) 服務 (CV.CVPU)
  *
  * 提供紅利分配記錄的查詢功能。
  * 資料量小 (148 筆)，部分查詢使用快取。
@@ -21,10 +21,12 @@ import java.math.BigDecimal
  * val dividends = productUnitService.findByPolicyNo("P000000001")
  * val summary = productUnitService.getDividendSummary("P000000001", 1)
  * ```
+ *
+ * @see CvpuMapper Mapper 層（ADR-017 表格導向命名）
  */
 @Service
 class ProductUnitService(
-    private val mapper: ProductUnitMapper
+    private val mapper: CvpuMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 

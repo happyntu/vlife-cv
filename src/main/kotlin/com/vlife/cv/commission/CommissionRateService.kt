@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 import java.time.LocalDate
 
 /**
- * 佣金率服務
+ * 佣金率服務 (CV.CRAT)
  *
  * 提供佣金率的查詢功能，對應 V3 的 pk_lib_cratproc 功能。
  * 整合 Caffeine 快取，減少資料庫存取。
@@ -39,10 +39,12 @@ import java.time.LocalDate
  *     )
  * )
  * ```
+ *
+ * @see CratMapper Mapper 層（ADR-017 表格導向命名）
  */
 @Service
 class CommissionRateService(
-    private val mapper: CommissionRateMapper
+    private val mapper: CratMapper
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 

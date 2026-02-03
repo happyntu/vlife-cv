@@ -5,15 +5,16 @@ import org.apache.ibatis.annotations.Param
 import java.math.BigDecimal
 
 /**
- * 產品單位 (紅利分配) MyBatis Mapper
+ * 產品單位表 (紅利分配) Mapper (CV.CVPU)
  *
  * 遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
  * 遵循 ADR-016 規範，SQL 集中於 XML 管理。
+ * 遵循 ADR-017 規範，Mapper 名稱對應資料庫表格名稱。
  *
- * @see resources/mapper/cv/ProductUnitMapper.xml
+ * @see resources/mapper/cv/CvpuMapper.xml
  */
 @Mapper
-interface ProductUnitMapper {
+interface CvpuMapper {
 
     /**
      * 依保單號碼查詢所有紅利分配記錄

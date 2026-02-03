@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    CommissionRateMapper - 佣金率 MyBatis Mapper
+
+    遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
+    遵循 ADR-016 規範，SQL 集中於 XML 管理。
+-->
+<mapper namespace="com.vlife.cv.commission.CommissionRateMapper">
+
+    <!-- SQL 片段：佣金率欄位對應 -->
+    <sql id="commissionRateColumns">
+        CRAT_SERIAL as serial,
+        COMM_CLASS_CODE as commClassCode,
+        COMM_LINE_CODE as commLineCode,
+        CRAT_TYPE as cratType,
+        PROJ_NO as projectNo,
+        STR_DATE as startDate,
+        END_DATE as endDate,
+        CRAT_KEY1 as cratKey1,
+        CRAT_KEY2 as cratKey2,
+        COMM_START_YEAR as commStartYear,
+        COMM_END_YEAR as commEndYear,
+        COMM_START_AGE as commStartAge,
+        COMM_END_AGE as commEndAge,
+        COMM_START_MODX as commStartModx,
+        COMM_END_MODX as commEndModx,
+        COMM_RATE as commRate,
+        COMM_RATE_ORG as commRateOrg,
+        PREM_LIMIT_STR as premLimitStart,
+        PREM_LIMIT_END as premLimitEnd
+    </sql>
+
+    <!--
+        依序號查詢佣金率
+    -->
+    <select id="findBySerial" resultType="com.vlife.cv.commission.CommissionRate">
+        SELECT <include refid="commissionRateColumns"/>
+        FROM CV.CRAT
+        WHERE CRAT_SERIAL = #{serial}
+    </select>
+
+    <!--
+        依佣金類別碼查詢佣金率清單
+    -->
+    <select id="findByClassCode" resultType="com.vlife.cv.commission.CommissionRate">
+        SELECT <include refid="commissionRateColumns"/>
+        FROM CV.CRAT
+        WHERE COMM_CLASS_CODE = #{commClassCode}
+        ORDER BY STR_DATE DESC, CRAT_SERIAL
+    </select>
+
+    <!--
+        查詢指定日期有效的佣金率
+    -->
+    <select id="findEffectiveRates" resultType="com.vlife.cv.commission.CommissionRate">
+        SELECT <include refid="commissionRateColumns"/>
+        FROM CV.CRAT
+        WHERE COMM_CLASS_CODE = #{commClassCode}
+          AND COMM_LINE_CODE = #{commLineCode}
+          AND STR_DATE &lt;= #{effectiveDate}
+          AND END_DATE &gt;= #{effectiveDate}
+        ORDER BY CRAT_TYPE, CRAT_SERIAL
+    </select>
+
+    <!--
+        依業務線代號查詢所有佣金率類別碼
+    -->
+    <select id="findClassCodesByLineCode" resultType="java.lang.String">
+        SELECT DISTINCT COMM_CLASS_CODE
+        FROM CV.CRAT
+        WHERE COMM_LINE_CODE = #{commLineCode}
+        ORDER BY COMM_CLASS_CODE
+    </select>
+
+    <!--
+        查詢所有不重複的業務線代號
+    -->
+    <select id="findAllLineCodes" resultType="java.lang.String">
+        SELECT DISTINCT COMM_LINE_CODE
+        FROM CV.CRAT
+        ORDER BY COMM_LINE_CODE
+    </select>
+
+    <!--
+        查詢所有不重複的佣金率型態
+    -->
+    <select id="findAllCratTypes" resultType="java.lang.String">
+        SELECT DISTINCT CRAT_TYPE
+        FROM CV.CRAT
+        ORDER BY CRAT_TYPE
+    </select>
+
+    <!--
+        依多條件查詢佣金率
+
+        注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+    -->
+    <select id="search" resultType="com.vlife.cv.commission.CommissionRate">
+        SELECT <include refid="commissionRateColumns"/>
+        FROM CV.CRAT
+        <where>
+            <if test="commClassCode != null">
+                AND COMM_CLASS_CODE = #{commClassCode}
+            </if>
+            <if test="commLineCode != null">
+                AND COMM_LINE_CODE = #{commLineCode}
+            </if>
+            <if test="cratType != null">
+                AND CRAT_TYPE = #{cratType}
+            </if>
+            <if test="effectiveDate != null">
+                AND STR_DATE &lt;= #{effectiveDate}
+                AND END_DATE &gt;= #{effectiveDate}
+            </if>
+        </where>
+        ORDER BY COMM_CLASS_CODE, COMM_LINE_CODE, STR_DATE DESC
+    </select>
+
+    <!--
+        計算指定佣金類別碼的資料筆數
+    -->
+    <select id="countByClassCode" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.CRAT
+        WHERE COMM_CLASS_CODE = #{commClassCode}
+    </select>
+
+</mapper>

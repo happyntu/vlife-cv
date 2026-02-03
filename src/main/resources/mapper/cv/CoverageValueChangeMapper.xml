@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+    CoverageValueChangeMapper - 保單基礎值變化 MyBatis Mapper
+
+    遵循 ADR-009 規範，SQL 必須明確指定 CV Schema。
+    遵循 ADR-016 規範，SQL 集中於 XML 管理。
+-->
+<mapper namespace="com.vlife.cv.coverage.CoverageValueChangeMapper">
+
+    <!-- SQL 片段：承保範圍欄位對應 -->
+    <sql id="coverageColumns">
+        POLICY_NO as policyNo,
+        COVERAGE_NO as coverageNo,
+        PLAN_CODE as planCode,
+        VERSION as version,
+        RATE_SEX as rateSex,
+        RATE_AGE as rateAge,
+        RATE_SUB_1 as rateSub1,
+        RATE_SUB_2 as rateSub2,
+        CO_ISSUE_DATE as issueDate,
+        CO_STATUS_CODE as statusCode,
+        INSURANCE_TYPE_3 as insuranceType3,
+        PROCESS_DATE as processDate,
+        PROCESS_TYPE as processType,
+        POLICY_TYPE as policyType,
+        CO_STATUS_CODE2 as statusCode2
+    </sql>
+
+    <!--
+        依保單號碼查詢所有承保範圍
+
+        注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+    -->
+    <select id="findByPolicyNo" resultType="com.vlife.cv.coverage.CoverageValueChange">
+        SELECT <include refid="coverageColumns"/>
+        FROM CV.CVCO
+        WHERE POLICY_NO = #{policyNo}
+        ORDER BY COVERAGE_NO
+    </select>
+
+    <!--
+        依主鍵查詢單筆承保範圍
+    -->
+    <select id="findById" resultType="com.vlife.cv.coverage.CoverageValueChange">
+        SELECT <include refid="coverageColumns"/>
+        FROM CV.CVCO
+        WHERE POLICY_NO = #{policyNo} AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!--
+        依險種代碼查詢承保範圍
+
+        注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+    -->
+    <select id="findByPlanCode" resultType="com.vlife.cv.coverage.CoverageValueChange">
+        SELECT <include refid="coverageColumns"/>
+        FROM CV.CVCO
+        WHERE PLAN_CODE = #{planCode}
+        ORDER BY POLICY_NO, COVERAGE_NO
+    </select>
+
+    <!--
+        依承保狀態碼查詢承保範圍
+
+        注意：此方法應搭配 PageHelper.startPage() 使用以支援分頁。
+    -->
+    <select id="findByStatusCode" resultType="com.vlife.cv.coverage.CoverageValueChange">
+        SELECT <include refid="coverageColumns"/>
+        FROM CV.CVCO
+        WHERE CO_STATUS_CODE = #{statusCode}
+        ORDER BY PROCESS_DATE DESC
+    </select>
+
+    <!--
+        查詢所有不重複的險種代碼
+    -->
+    <select id="findAllPlanCodes" resultType="java.lang.String">
+        SELECT DISTINCT PLAN_CODE
+        FROM CV.CVCO
+        ORDER BY PLAN_CODE
+    </select>
+
+    <!--
+        計算指定保單的承保範圍數量
+    -->
+    <select id="countByPolicyNo" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.CVCO
+        WHERE POLICY_NO = #{policyNo}
+    </select>
+
+</mapper>

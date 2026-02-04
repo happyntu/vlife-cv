@@ -37,6 +37,11 @@ class CacheConfig {
         const val CACHE_CVDI_BY_PLAN = "cvdiByPlan"
         const val CACHE_CVRF_BY_PLAN = "cvrfByPlan"
 
+        // PLDF (險種描述) 快取
+        const val CACHE_PLDF_BY_PK = "pldfByPk"
+        const val CACHE_PLDF_BY_PLAN_CODE = "pldfByPlanCode"
+        const val CACHE_PLDF_EFFECTIVE = "pldfEffective"
+
         /** 快取 TTL：1 小時（佣金率等資料變更頻率低，每日批次更新） */
         private const val DEFAULT_EXPIRE_HOURS = 1L
 
@@ -60,7 +65,10 @@ class CacheConfig {
                     CACHE_COMMISSION_RATE_EFFECTIVE,
                     CACHE_DIVIDEND_SUMMARY,
                     CACHE_CVDI_BY_PLAN,
-                    CACHE_CVRF_BY_PLAN
+                    CACHE_CVRF_BY_PLAN,
+                    CACHE_PLDF_BY_PK,
+                    CACHE_PLDF_BY_PLAN_CODE,
+                    CACHE_PLDF_EFFECTIVE
                 )
             )
         }

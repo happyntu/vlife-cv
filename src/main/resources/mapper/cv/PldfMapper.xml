@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    險種描述檔 Mapper (CV.PLDF)
+
+    遵循 ADR-016 規範，使用 XML 定義 SQL 查詢。
+    遵循 ADR-017 規範，採用表格導向命名。
+    遵循 ADR-022 規範，PLDF 歸屬於 CV 模組。
+
+    V3 PL/SQL 對應：
+    - PK_CV_CV001M.cv001m_sql_statement → 動態 SQL 組合
+    - PK_LIB_PLANPROC.F99_GET_PLDF → findByPlanCodeAndVersion
+    - PK_LIB_PLANPROC.F99_INSERT_PLAN → insert
+    - PK_LIB_PLANPROC.F99_UPDATE_PLAN → update
+    - PK_LIB_PLANPROC.F99_DELETE_PLDF → deleteByPlanCodeAndVersion
+
+    Oracle 表格：V3.PLDF (140+ 欄位，本 Mapper 映射常用欄位)
+-->
+<mapper namespace="com.vlife.cv.plan.PldfMapper">
+
+    <!-- Result Map: 完整欄位映射 -->
+    <resultMap id="PldfResultMap" type="com.vlife.cv.plan.Pldf">
+        <!-- 主鍵 -->
+        <id property="planCode" column="PLAN_CODE"/>
+        <id property="version" column="VERSION"/>
+
+        <!-- 基本資訊 -->
+        <result property="planTitle" column="PLAN_TITLE"/>
+        <result property="planName" column="PLAN_NAME"/>
+        <result property="contractedName" column="CONTRACTED_NAME"/>
+
+        <!-- 年齡限制 -->
+        <result property="lowAge" column="LOW_AGE"/>
+        <result property="highAge" column="HIGH_AGE"/>
+        <result property="lowAgeSub" column="LOW_AGE_SUB"/>
+        <result property="highAgeSub" column="HIGH_AGE_SUB"/>
+        <result property="lowAgeInd" column="LOW_AGE_IND"/>
+        <result property="highAgeInd" column="HIGH_AGE_IND"/>
+        <result property="renHighAgeInd" column="REN_HIGH_AGE_IND"/>
+        <result property="renHighAge" column="REN_HIGH_AGE"/>
+
+        <!-- 繳費/保障年期 -->
+        <result property="collectYearInd" column="COLLECT_YEAR_IND"/>
+        <result property="collectYear" column="COLLECT_YEAR"/>
+        <result property="expYearInd" column="EXP_YEAR_IND"/>
+        <result property="expYear" column="EXP_YEAR"/>
+
+        <!-- 上市日期 -->
+        <result property="planStartDate" column="PLAN_START_DATE"/>
+        <result property="planEndDate" column="PLAN_END_DATE"/>
+
+        <!-- 險種分類 -->
+        <result property="primaryRiderInd" column="PRIMARY_RIDER_IND"/>
+        <result property="riderInd" column="RIDER_IND"/>
+        <result property="planRelation" column="PLAN_RELATION"/>
+        <result property="planRelationSub" column="PLAN_RELATION_SUB"/>
+        <result property="insuranceType" column="INSURANCE_TYPE"/>
+        <result property="insuranceType2" column="INSURANCE_TYPE_2"/>
+        <result property="insuranceType3" column="INSURANCE_TYPE_3"/>
+        <result property="insuranceType4" column="INSURANCE_TYPE_4"/>
+        <result property="insuranceType5" column="INSURANCE_TYPE_5"/>
+        <result property="planType" column="PLAN_TYPE"/>
+
+        <!-- 幣別與會計 -->
+        <result property="currency1" column="CURRENCY_1"/>
+        <result property="acntType" column="ACNT_TYPE"/>
+        <result property="planAccountInd" column="PLAN_ACCOUNT_IND"/>
+
+        <!-- 紅利設定 -->
+        <result property="divType" column="DIV_TYPE"/>
+        <result property="divStartYear" column="DIV_START_YEAR"/>
+        <result property="divPayItemInd" column="DIV_PAY_ITEM_IND"/>
+        <result property="divCalcItemInd" column="DIV_CALC_ITEM_IND"/>
+        <result property="cvDivCode" column="CV_DIV_CODE"/>
+        <result property="divSwM" column="DIV_SW_M"/>
+
+        <!-- 給付/保障 -->
+        <result property="deathBenefInd" column="DEATH_BENEF_IND"/>
+        <result property="surrenderInd" column="SURRENDER_IND"/>
+        <result property="lbenf" column="LBENF"/>
+        <result property="mbenf" column="MBENF"/>
+        <result property="dbenf" column="DBENF"/>
+        <result property="bbenf" column="BBENF"/>
+        <result property="benefInd" column="BENEF_IND"/>
+
+        <!-- 計算類型 -->
+        <result property="csvCalcType" column="CSV_CALC_TYPE"/>
+        <result property="puaCalcType" column="PUA_CALC_TYPE"/>
+        <result property="eteCalcType" column="ETE_CALC_TYPE"/>
+
+        <!-- 貸款 -->
+        <result property="loanAvalInd" column="LOAN_AVAL_IND"/>
+        <result property="loanPlanCode" column="LOAN_PLAN_CODE"/>
+        <result property="loanVersion" column="LOAN_VERSION"/>
+        <result property="loanAvalPercent" column="LOAN_AVAL_PERCENT"/>
+
+        <!-- 佣金 -->
+        <result property="commClassCode" column="COMM_CLASS_CODE"/>
+        <result property="commClassCodeI" column="COMM_CLASS_CODE_I"/>
+        <result property="prodClassCode" column="PROD_CLASS_CODE"/>
+
+        <!-- 關聯險種 -->
+        <result property="uwPlanCode" column="UW_PLAN_CODE"/>
+        <result property="uwVersion" column="UW_VERSION"/>
+        <result property="cvPlanCode" column="CV_PLAN_CODE"/>
+        <result property="cvVersion" column="CV_VERSION"/>
+        <result property="pcPlanCode" column="PC_PLAN_CODE"/>
+        <result property="pcVersion" column="PC_VERSION"/>
+        <result property="ratePlanCode" column="RATE_PLAN_CODE"/>
+        <result property="rateVersion" column="RATE_VERSION"/>
+        <result property="treatyCode" column="TREATY_CODE"/>
+
+        <!-- 費率參數 -->
+        <result property="rateSexInd" column="RATE_SEX_IND"/>
+        <result property="rateAgeInd" column="RATE_AGE_IND"/>
+        <result property="rateSub1Ind" column="RATE_SUB_1_IND"/>
+        <result property="rateSub2Ind" column="RATE_SUB_2_IND"/>
+
+        <!-- 保費相關 -->
+        <result property="premCalcType" column="PREM_CALC_TYPE"/>
+        <result property="premValue" column="PREM_VALUE"/>
+        <result property="premLackInd" column="PREM_LACK_IND"/>
+        <result property="faceAmtUnit" column="FACE_AMT_UNIT"/>
+        <result property="topFaceAmt" column="TOP_FACE_AMT"/>
+        <result property="faceAmtType" column="FACE_AMT_TYPE"/>
+
+        <!-- 年金/其他 -->
+        <result property="annySw" column="ANNY_SW"/>
+        <result property="persistRewardInd" column="PERSIST_REWARD_IND"/>
+        <result property="persistPremVal" column="PERSIST_PREM_VAL"/>
+    </resultMap>
+
+    <!-- Result Map: 摘要 (列表用) -->
+    <resultMap id="PldfSummaryResultMap" type="com.vlife.cv.plan.PldfSummary">
+        <result property="planCode" column="PLAN_CODE"/>
+        <result property="version" column="VERSION"/>
+        <result property="planTitle" column="PLAN_TITLE"/>
+        <result property="planStartDate" column="PLAN_START_DATE"/>
+        <result property="planEndDate" column="PLAN_END_DATE"/>
+        <result property="primaryRiderInd" column="PRIMARY_RIDER_IND"/>
+        <result property="insuranceType3" column="INSURANCE_TYPE_3"/>
+        <result property="currency1" column="CURRENCY_1"/>
+        <result property="isEffective" column="IS_EFFECTIVE"/>
+    </resultMap>
+
+    <!-- 基本欄位 (常用查詢) -->
+    <sql id="baseColumns">
+        PLAN_CODE, VERSION, PLAN_TITLE, PLAN_NAME, CONTRACTED_NAME,
+        LOW_AGE, HIGH_AGE, LOW_AGE_SUB, HIGH_AGE_SUB,
+        LOW_AGE_IND, HIGH_AGE_IND, REN_HIGH_AGE_IND, REN_HIGH_AGE,
+        COLLECT_YEAR_IND, COLLECT_YEAR, EXP_YEAR_IND, EXP_YEAR,
+        PLAN_START_DATE, PLAN_END_DATE,
+        PRIMARY_RIDER_IND, RIDER_IND, PLAN_RELATION, PLAN_RELATION_SUB,
+        INSURANCE_TYPE, INSURANCE_TYPE_2, INSURANCE_TYPE_3, INSURANCE_TYPE_4, INSURANCE_TYPE_5,
+        PLAN_TYPE, CURRENCY_1, ACNT_TYPE, PLAN_ACCOUNT_IND,
+        DIV_TYPE, DIV_START_YEAR, DIV_PAY_ITEM_IND, DIV_CALC_ITEM_IND, CV_DIV_CODE, DIV_SW_M,
+        DEATH_BENEF_IND, SURRENDER_IND, LBENF, MBENF, DBENF, BBENF, BENEF_IND,
+        CSV_CALC_TYPE, PUA_CALC_TYPE, ETE_CALC_TYPE,
+        LOAN_AVAL_IND, LOAN_PLAN_CODE, LOAN_VERSION, LOAN_AVAL_PERCENT,
+        COMM_CLASS_CODE, COMM_CLASS_CODE_I, PROD_CLASS_CODE,
+        UW_PLAN_CODE, UW_VERSION, CV_PLAN_CODE, CV_VERSION, PC_PLAN_CODE, PC_VERSION,
+        RATE_PLAN_CODE, RATE_VERSION, TREATY_CODE,
+        RATE_SEX_IND, RATE_AGE_IND, RATE_SUB_1_IND, RATE_SUB_2_IND,
+        PREM_CALC_TYPE, PREM_VALUE, PREM_LACK_IND, FACE_AMT_UNIT, TOP_FACE_AMT, FACE_AMT_TYPE,
+        ANNY_SW, PERSIST_REWARD_IND, PERSIST_PREM_VAL
+    </sql>
+
+    <!-- 摘要欄位 (列表用) -->
+    <sql id="summaryColumns">
+        PLAN_CODE, VERSION, PLAN_TITLE, PLAN_START_DATE, PLAN_END_DATE,
+        PRIMARY_RIDER_IND, INSURANCE_TYPE_3, CURRENCY_1,
+        CASE WHEN SYSDATE BETWEEN PLAN_START_DATE AND PLAN_END_DATE THEN 1 ELSE 0 END AS IS_EFFECTIVE
+    </sql>
+
+    <!-- ==================== 查詢方法 ==================== -->
+
+    <!-- 依主鍵查詢 -->
+    <select id="findByPlanCodeAndVersion" resultMap="PldfResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM V3.PLDF
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+    </select>
+
+    <!-- 依險種代碼查詢所有版本 -->
+    <select id="findByPlanCode" resultMap="PldfResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM V3.PLDF
+        WHERE PLAN_CODE = #{planCode}
+        ORDER BY VERSION
+    </select>
+
+    <!-- 查詢有效險種 -->
+    <select id="findEffective" resultMap="PldfResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM V3.PLDF
+        WHERE #{effectiveDate} BETWEEN PLAN_START_DATE AND PLAN_END_DATE
+        ORDER BY PLAN_CODE, VERSION
+    </select>
+
+    <!-- 查詢有效險種 (摘要) -->
+    <select id="findEffectiveSummary" resultMap="PldfSummaryResultMap">
+        SELECT <include refid="summaryColumns"/>
+        FROM V3.PLDF
+        WHERE #{effectiveDate} BETWEEN PLAN_START_DATE AND PLAN_END_DATE
+        ORDER BY PLAN_CODE, VERSION
+    </select>
+
+    <!-- 多條件搜尋 (對應 V3 cv001m_sql_statement 動態 SQL) -->
+    <select id="search" resultMap="PldfResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM V3.PLDF
+        <where>
+            <if test="planCode != null and planCode != ''">
+                AND PLAN_CODE LIKE '%' || #{planCode} || '%'
+            </if>
+            <if test="version != null and version != ''">
+                AND VERSION = #{version}
+            </if>
+            <if test="primaryRiderInd != null and primaryRiderInd != ''">
+                AND PRIMARY_RIDER_IND = #{primaryRiderInd}
+            </if>
+            <if test="insuranceType3 != null and insuranceType3 != ''">
+                AND INSURANCE_TYPE_3 = #{insuranceType3}
+            </if>
+            <if test="planType != null and planType != ''">
+                AND PLAN_TYPE = #{planType}
+            </if>
+            <if test="effectiveDate != null">
+                AND #{effectiveDate} BETWEEN PLAN_START_DATE AND PLAN_END_DATE
+            </if>
+            <if test="currency != null and currency != ''">
+                AND CURRENCY_1 = #{currency}
+            </if>
+            <if test="loanAvalInd != null and loanAvalInd != ''">
+                AND LOAN_AVAL_IND = #{loanAvalInd}
+            </if>
+            <if test="divType != null and divType != ''">
+                AND DIV_TYPE = #{divType}
+            </if>
+        </where>
+        ORDER BY PLAN_CODE, VERSION
+    </select>
+
+    <!-- 多條件搜尋 (摘要) -->
+    <select id="searchSummary" resultMap="PldfSummaryResultMap">
+        SELECT <include refid="summaryColumns"/>
+        FROM V3.PLDF
+        <where>
+            <if test="planCode != null and planCode != ''">
+                AND PLAN_CODE LIKE '%' || #{planCode} || '%'
+            </if>
+            <if test="version != null and version != ''">
+                AND VERSION = #{version}
+            </if>
+            <if test="primaryRiderInd != null and primaryRiderInd != ''">
+                AND PRIMARY_RIDER_IND = #{primaryRiderInd}
+            </if>
+            <if test="insuranceType3 != null and insuranceType3 != ''">
+                AND INSURANCE_TYPE_3 = #{insuranceType3}
+            </if>
+            <if test="planType != null and planType != ''">
+                AND PLAN_TYPE = #{planType}
+            </if>
+            <if test="effectiveDate != null">
+                AND #{effectiveDate} BETWEEN PLAN_START_DATE AND PLAN_END_DATE
+            </if>
+        </where>
+        ORDER BY PLAN_CODE, VERSION
+    </select>
+
+    <!-- 查詢所有不重複的險種代碼 -->
+    <select id="findAllPlanCodes" resultType="String">
+        SELECT DISTINCT PLAN_CODE
+        FROM V3.PLDF
+        ORDER BY PLAN_CODE
+    </select>
+
+    <!-- 查詢所有不重複的保險型態3 -->
+    <select id="findAllInsuranceType3" resultType="String">
+        SELECT DISTINCT INSURANCE_TYPE_3
+        FROM V3.PLDF
+        WHERE INSURANCE_TYPE_3 IS NOT NULL
+        ORDER BY INSURANCE_TYPE_3
+    </select>
+
+    <!-- 計算險種代碼的版本數量 -->
+    <select id="countByPlanCode" resultType="int">
+        SELECT COUNT(*)
+        FROM V3.PLDF
+        WHERE PLAN_CODE = #{planCode}
+    </select>
+
+    <!-- 檢查主鍵是否存在 -->
+    <select id="existsByPlanCodeAndVersion" resultType="int">
+        SELECT CASE WHEN EXISTS (
+            SELECT 1 FROM V3.PLDF
+            WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+        ) THEN 1 ELSE 0 END
+        FROM DUAL
+    </select>
+
+    <!-- ==================== CUD 方法 (CV001M) ==================== -->
+
+    <!-- 新增險種描述 -->
+    <insert id="insert" parameterType="com.vlife.cv.plan.Pldf">
+        INSERT INTO V3.PLDF (
+            PLAN_CODE, VERSION, PLAN_TITLE, PLAN_NAME, CONTRACTED_NAME,
+            LOW_AGE, HIGH_AGE, LOW_AGE_IND, HIGH_AGE_IND,
+            COLLECT_YEAR_IND, COLLECT_YEAR, EXP_YEAR_IND, EXP_YEAR,
+            PLAN_START_DATE, PLAN_END_DATE,
+            PRIMARY_RIDER_IND, INSURANCE_TYPE, INSURANCE_TYPE_3, PLAN_TYPE,
+            CURRENCY_1, PLAN_ACCOUNT_IND,
+            DIV_TYPE, DIV_SW_M,
+            CSV_CALC_TYPE, PUA_CALC_TYPE, ETE_CALC_TYPE,
+            LOAN_AVAL_IND, COMM_CLASS_CODE, COMM_CLASS_CODE_I,
+            UW_PLAN_CODE, UW_VERSION, PC_PLAN_CODE, PC_VERSION,
+            ANNY_SW, PREM_LACK_IND, PERSIST_REWARD_IND, PERSIST_PREM_VAL
+        ) VALUES (
+            #{planCode}, #{version}, #{planTitle}, #{planName}, #{contractedName},
+            #{lowAge}, #{highAge}, #{lowAgeInd}, #{highAgeInd},
+            #{collectYearInd}, #{collectYear}, #{expYearInd}, #{expYear},
+            #{planStartDate}, #{planEndDate},
+            #{primaryRiderInd}, #{insuranceType}, #{insuranceType3}, #{planType},
+            #{currency1}, #{planAccountInd},
+            #{divType}, #{divSwM},
+            #{csvCalcType}, #{puaCalcType}, #{eteCalcType},
+            #{loanAvalInd}, #{commClassCode}, #{commClassCodeI},
+            #{uwPlanCode}, #{uwVersion}, #{pcPlanCode}, #{pcVersion},
+            #{annySw}, #{premLackInd}, #{persistRewardInd}, #{persistPremVal}
+        )
+    </insert>
+
+    <!-- 更新險種描述 -->
+    <update id="update">
+        UPDATE V3.PLDF
+        <set>
+            <if test="request.planTitle != null">PLAN_TITLE = #{request.planTitle},</if>
+            <if test="request.planName != null">PLAN_NAME = #{request.planName},</if>
+            <if test="request.contractedName != null">CONTRACTED_NAME = #{request.contractedName},</if>
+            <if test="request.planStartDate != null">PLAN_START_DATE = #{request.planStartDate},</if>
+            <if test="request.planEndDate != null">PLAN_END_DATE = #{request.planEndDate},</if>
+            <if test="request.primaryRiderInd != null">PRIMARY_RIDER_IND = #{request.primaryRiderInd},</if>
+            <if test="request.insuranceType != null">INSURANCE_TYPE = #{request.insuranceType},</if>
+            <if test="request.insuranceType3 != null">INSURANCE_TYPE_3 = #{request.insuranceType3},</if>
+            <if test="request.planType != null">PLAN_TYPE = #{request.planType},</if>
+            <if test="request.divType != null">DIV_TYPE = #{request.divType},</if>
+            <if test="request.loanAvalInd != null">LOAN_AVAL_IND = #{request.loanAvalInd},</if>
+            <if test="request.commClassCode != null">COMM_CLASS_CODE = #{request.commClassCode},</if>
+            <if test="request.commClassCodeI != null">COMM_CLASS_CODE_I = #{request.commClassCodeI},</if>
+            <if test="request.pcPlanCode != null">PC_PLAN_CODE = #{request.pcPlanCode},</if>
+            <if test="request.pcVersion != null">PC_VERSION = #{request.pcVersion},</if>
+            <if test="request.lowAge != null">LOW_AGE = #{request.lowAge},</if>
+            <if test="request.highAge != null">HIGH_AGE = #{request.highAge},</if>
+            <if test="request.collectYearInd != null">COLLECT_YEAR_IND = #{request.collectYearInd},</if>
+            <if test="request.collectYear != null">COLLECT_YEAR = #{request.collectYear},</if>
+            <if test="request.expYearInd != null">EXP_YEAR_IND = #{request.expYearInd},</if>
+            <if test="request.expYear != null">EXP_YEAR = #{request.expYear},</if>
+        </set>
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+    </update>
+
+    <!-- 刪除險種描述 -->
+    <delete id="deleteByPlanCodeAndVersion">
+        DELETE FROM V3.PLDF
+        WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
+    </delete>
+
+</mapper>

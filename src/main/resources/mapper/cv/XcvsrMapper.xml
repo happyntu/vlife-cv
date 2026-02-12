@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.surrender.XcvsrMapper">
+
+    <!-- SQL 片段：所有欄位 (ADR-016: 禁止 SELECT *) -->
+    <sql id="xcvsrColumns">
+        POLICY_NO as policyNo,
+        COVERAGE_NO as coverageNo,
+        SCORE_RATING_UNIT as scoreRatingUnit
+    </sql>
+
+    <!-- 精確查詢：對應 V3 f99_get_xcvsr -->
+    <select id="findByPolicyNoAndCoverageNo" resultType="com.vlife.cv.surrender.CrossProductSurrender">
+        SELECT <include refid="xcvsrColumns"/>
+        FROM CV.XCVSR
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!-- 依保單號碼查詢所有險種 -->
+    <select id="findAllByPolicyNo" resultType="com.vlife.cv.surrender.CrossProductSurrender">
+        SELECT <include refid="xcvsrColumns"/>
+        FROM CV.XCVSR
+        WHERE POLICY_NO = #{policyNo}
+        ORDER BY COVERAGE_NO
+    </select>
+
+    <!-- 存在性檢查 -->
+    <select id="exists" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM CV.XCVSR
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!-- INSERT (預留供管理介面使用) -->
+    <insert id="insert">
+        INSERT INTO CV.XCVSR (
+            POLICY_NO,
+            COVERAGE_NO,
+            SCORE_RATING_UNIT
+        ) VALUES (
+            #{policyNo},
+            #{coverageNo},
+            #{scoreRatingUnit}
+        )
+    </insert>
+
+    <!-- UPDATE (預留供管理介面使用) -->
+    <update id="update">
+        UPDATE CV.XCVSR SET
+            SCORE_RATING_UNIT = #{scoreRatingUnit}
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </update>
+
+    <!-- DELETE (預留供管理介面使用) -->
+    <delete id="delete">
+        DELETE FROM CV.XCVSR
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </delete>
+
+</mapper>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.rate.QtprtMapper">
+
+    <!-- ===== SQL Fragment Reuse ===== -->
+
+    <sql id="quoteRateColumns">
+        TARGET_PREM_CODE as targetPremCode,
+        TARGET_TYPE as targetType,
+        STR_DATE as strDate,
+        END_DATE as endDate,
+        RATE_AGE as rateAge,
+        RATE_SEX as rateSex,
+        QTPRT_TYPE as qtprtType,
+        ANNUAL_PREM as annualPrem
+    </sql>
+
+    <sql id="primaryKeyCondition">
+        TARGET_PREM_CODE = #{targetPremCode}
+        AND TARGET_TYPE = #{targetType}
+        AND STR_DATE = #{strDate}
+        AND END_DATE = #{endDate}
+        AND RATE_AGE = #{rateAge}
+        AND RATE_SEX = #{rateSex}
+        AND QTPRT_TYPE = #{qtprtType}
+    </sql>
+
+    <!-- ===== Query Operations ===== -->
+
+    <!-- Find by primary key -->
+    <select id="findByPrimaryKey" resultType="com.vlife.cv.rate.QuoteRate">
+        SELECT <include refid="quoteRateColumns"/>
+        FROM CV.QTPRT
+        WHERE <include refid="primaryKeyCondition"/>
+    </select>
+
+    <!-- Find by effective date (most common query pattern) -->
+    <select id="findByEffectiveDate" resultType="com.vlife.cv.rate.QuoteRate">
+        SELECT <include refid="quoteRateColumns"/>
+        FROM CV.QTPRT
+        WHERE TARGET_PREM_CODE = #{targetPremCode}
+          AND TARGET_TYPE = #{targetType}
+          AND RATE_AGE = #{rateAge}
+          AND RATE_SEX = #{rateSex}
+          AND QTPRT_TYPE = #{qtprtType}
+          AND #{effectiveDate} BETWEEN STR_DATE AND END_DATE
+    </select>
+
+    <!-- Find all by target premium code -->
+    <select id="findByTargetPremCode" resultType="com.vlife.cv.rate.QuoteRate">
+        SELECT <include refid="quoteRateColumns"/>
+        FROM CV.QTPRT
+        WHERE TARGET_PREM_CODE = #{targetPremCode}
+        ORDER BY STR_DATE, RATE_AGE
+    </select>
+
+    <!-- ===== Count Operations ===== -->
+
+    <!-- Count by primary key -->
+    <select id="countByPrimaryKey" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.QTPRT
+        WHERE <include refid="primaryKeyCondition"/>
+    </select>
+
+    <!-- ===== Insert Operation ===== -->
+
+    <!-- Insert new quote rate record -->
+    <insert id="insert" parameterType="com.vlife.cv.rate.QuoteRate">
+        INSERT INTO CV.QTPRT (
+            TARGET_PREM_CODE, TARGET_TYPE, STR_DATE, END_DATE,
+            RATE_AGE, RATE_SEX, QTPRT_TYPE, ANNUAL_PREM
+        ) VALUES (
+            #{targetPremCode}, #{targetType}, #{strDate}, #{endDate},
+            #{rateAge}, #{rateSex}, #{qtprtType}, #{annualPrem}
+        )
+    </insert>
+
+    <!-- ===== Update Operation ===== -->
+
+    <!-- Update by primary key -->
+    <update id="update">
+        UPDATE CV.QTPRT
+        SET ANNUAL_PREM = #{entity.annualPrem}
+        WHERE TARGET_PREM_CODE = #{key.targetPremCode}
+          AND TARGET_TYPE = #{key.targetType}
+          AND STR_DATE = #{key.strDate}
+          AND END_DATE = #{key.endDate}
+          AND RATE_AGE = #{key.rateAge}
+          AND RATE_SEX = #{key.rateSex}
+          AND QTPRT_TYPE = #{key.qtprtType}
+    </update>
+
+    <!-- ===== Delete Operation ===== -->
+
+    <!-- Delete by primary key -->
+    <delete id="deleteByPrimaryKey">
+        DELETE FROM CV.QTPRT
+        WHERE <include refid="primaryKeyCondition"/>
+    </delete>
+
+</mapper>

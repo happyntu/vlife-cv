@@ -29,6 +29,7 @@ mybatis:
     default-fetch-size: 100
     default-statement-timeout: 30
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    jdbc-type-for-null: 'NULL'  # Oracle 必須：修正 ORA-17004 錯誤
 
 # -------------------- PageHelper --------------------
 pagehelper:

@@ -6,6 +6,7 @@ import org.springframework.cache.annotation.EnableCaching
 import org.springframework.cache.caffeine.CaffeineCacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import java.util.concurrent.TimeUnit
 
 /**
@@ -42,6 +43,9 @@ class CacheConfig {
         const val CACHE_PLDF_BY_PLAN_CODE = "pldfByPlanCode"
         const val CACHE_PLDF_EFFECTIVE = "pldfEffective"
 
+        // PRAT (費率) 快取
+        const val CACHE_PLAN_RATE = "planRate"
+
         /** 快取 TTL：1 小時（佣金率等資料變更頻率低，每日批次更新） */
         private const val DEFAULT_EXPIRE_HOURS = 1L
 
@@ -50,6 +54,7 @@ class CacheConfig {
     }
 
     @Bean("cvCacheManager")
+    @Primary
     fun cvCacheManager(): CacheManager {
         return CaffeineCacheManager().apply {
             setCaffeine(
@@ -68,7 +73,8 @@ class CacheConfig {
                     CACHE_CVRF_BY_PLAN,
                     CACHE_PLDF_BY_PK,
                     CACHE_PLDF_BY_PLAN_CODE,
-                    CACHE_PLDF_EFFECTIVE
+                    CACHE_PLDF_EFFECTIVE,
+                    CACHE_PLAN_RATE
                 )
             )
         }

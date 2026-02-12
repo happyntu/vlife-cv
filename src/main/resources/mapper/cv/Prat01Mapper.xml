@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.rate.Prat01Mapper">
+
+    <!-- SQL 片段：所有欄位 (避免 SELECT *) -->
+    <sql id="prat01Columns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        RATE_SEX as rateSex,
+        RATE_SUB_1 as rateSub1,
+        RATE_SUB_2 as rateSub2,
+        RATE_AGE as rateAge,
+        PREM6_DIFF as prem6Diff,
+        PREM3_DIFF as prem3Diff,
+        PREM1_DIFF as prem1Diff
+    </sql>
+
+    <!-- 依完整主鍵查詢：對應 f99_get_prat01 -->
+    <select id="findByPrimaryKey" resultType="com.vlife.cv.rate.PlanRate01">
+        SELECT <include refid="prat01Columns"/>
+        FROM CV.PRAT01
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND RATE_SEX = #{rateSex}
+          AND RATE_SUB_1 = #{rateSub1}
+          AND RATE_SUB_2 = #{rateSub2}
+          AND RATE_AGE = #{rateAge}
+    </select>
+
+    <!-- 查詢險種的所有費率（用於批次處理/快取預熱） -->
+    <select id="findByPlanCode" resultType="com.vlife.cv.rate.PlanRate01">
+        SELECT <include refid="prat01Columns"/>
+        FROM CV.PRAT01
+        WHERE PLAN_CODE = #{planCode}
+        ORDER BY VERSION, RATE_SEX, RATE_SUB_1, RATE_SUB_2, RATE_AGE
+    </select>
+
+    <!-- 查詢特定險種版本的所有費率 -->
+    <select id="findByPlanCodeAndVersion" resultType="com.vlife.cv.rate.PlanRate01">
+        SELECT <include refid="prat01Columns"/>
+        FROM CV.PRAT01
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+        ORDER BY RATE_SEX, RATE_SUB_1, RATE_SUB_2, RATE_AGE
+    </select>
+
+    <!-- 存在性檢查 -->
+    <select id="existsByPrimaryKey" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM CV.PRAT01
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND RATE_SEX = #{rateSex}
+          AND RATE_SUB_1 = #{rateSub1}
+          AND RATE_SUB_2 = #{rateSub2}
+          AND RATE_AGE = #{rateAge}
+    </select>
+
+    <!-- 計數：特定險種的費率筆數 -->
+    <select id="countByPlanCode" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.PRAT01
+        WHERE PLAN_CODE = #{planCode}
+    </select>
+
+    <!-- 快取預熱：取得所有險種代碼 -->
+    <select id="findDistinctPlanCodes" resultType="string">
+        SELECT DISTINCT PLAN_CODE
+        FROM CV.PRAT01
+        ORDER BY PLAN_CODE
+    </select>
+
+</mapper>

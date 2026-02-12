@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.plan.PlntMapper">
+
+    <!-- SQL 片段：PLNT 完整欄位列表（遵循 ADR-016: SQL 必須在 XML） -->
+    <sql id="plntColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        INSURANCE_TYPE_6 as insuranceType6,
+        FREE_LOOK_IND as freeLookInd,
+        FREE_LOOK_DUR_IND as freeLookDurInd,
+        EFF_PERIOD as effPeriod,
+        FREE_LOOK_RATE_CD as freeLookRateCode,
+        PREM_TO_FUND_IND as premToFundInd,
+        PREM_TO_FUND_DUR as premToFundDur,
+        DEATH_BENEF_OPT as deathBenefOpt,
+        DEATH_PLAN_CODE as deathPlanCode,
+        DEATH_PLAN_AGE_IND as deathPlanAgeInd,
+        IV_FUNDSET_IND as ivFundsetInd,
+        FUND_IND as fundInd,
+        FUND_BALANCE_IND as fundBalanceInd,
+        PREM_PLAN_CODE as premPlanCode,
+        PREM_PRE_IND as premPreInd,
+        EXTRA_MODX_SW as extraModxSw,
+        EXTRA_INV_SW as extraInvSw,
+        LOAN_ACNT_IND as loanAcntInd,
+        LOAN_PLAN_CODE as loanPlanCode,
+        EXPEN_PLAN_CODE as expenPlanCode,
+        ALLOC_PLAN_CODE as allocPlanCode,
+        COI_CALC_IND as coiCalcInd,
+        COI_PLAN_CODE as coiPlanCode,
+        COI_PLAN_AGE_IND as coiPlanAgeInd,
+        COI_EXPN_IND as coiExpnInd,
+        WITHDRAW_TYPE_IND as withdrawTypeInd,
+        WITHDRAW_IV_ALLOC as withdrawIvAlloc,
+        WITHDRAW_DB_IND as withdrawDbInd,
+        IV_CHG_PER_IND as ivChgPerInd,
+        IV_CHG_CNT_IND as ivChgCntInd,
+        FEL_COMM_PREM_IND as felCommPremInd,
+        FEL_COMM_PREM_CAL as felCommPremCal,
+        TP_CALC_IND as tpCalcInd,
+        TP_CALC_IND2 as tpCalcInd2,
+        TARGET_PREM_CODE as targetPremCode,
+        TP_AGE_IND as tpAgeInd,
+        BILL_INFORM_IND as billInformInd,
+        BILL_INFORM_FREQ as billInformFreq,
+        CV_CALC_FREQ as cvCalcFreq,
+        RETURN_SEQ_IND as returnSeqInd,
+        RETURN_SEQ_IND2 as returnSeqInd2,
+        MATURE_DUR_IND as matureDurInd,
+        MATURE_DUR as matureDur,
+        MATURE_DUR_IND2 as matureDurInd2,
+        MATURE_VAL_IND as matureValInd,
+        MATURE_DIV_IND as matureDivInd,
+        MATURE_OPT_IND as matureOptInd,
+        MATURE_DEF_IND as matureDefInd,
+        ANNY_IND as annyInd,
+        ANNY_ADJ_FACTOR as annyAdjFactor,
+        PAY_OPTION as payOption,
+        ANNY_PLAN_CODE as annyPlanCode,
+        ANNY_AGE_MAX as annyAgeMax,
+        ANNY_START_IND as annyStartInd,
+        ANNY_DEFERED_DUR as annyDeferedDur,
+        ANNY_PRE_PAY_IND as annyPrePayInd,
+        ANNY_PRE_PAY_YEAR as annyPrePayYear,
+        ANNY_GAR_IND as annyGarInd,
+        ANNY_GAR_PERIOD as annyGarPeriod,
+        ANNY_AGE_MIN as annyAgeMin,
+        ANNY_STR_IND as annyStrInd,
+        ANNY_STR_VAL as annyStrVal,
+        MATURE_RE_VAL_IND as matureReValInd,
+        MATURE_NON_IND as matureNonInd,
+        NBDT_PLAN_CODE as nbdtPlanCode,
+        PC_DUR_PLAN as pcDurPlan,
+        BUSINESS_NO as businessNo,
+        RIDER_PREM_IND as riderPremInd,
+        IV_COMPANY_CODE2 as ivCompanyCode2,
+        RVF_IND as rvfInd,
+        CORRIDOR_SW as corridorSw
+    </sql>
+
+    <!-- 依險種代碼與版本查詢（遵循 ADR-009: 明確指定 Schema） -->
+    <select id="findByPlanCodeAndVersion" resultType="com.vlife.cv.plan.PlanNote">
+        SELECT <include refid="plntColumns"/>
+        FROM CV.PLNT
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+    </select>
+
+    <!-- 依險種代碼查詢所有版本 -->
+    <select id="findByPlanCode" resultType="com.vlife.cv.plan.PlanNote">
+        SELECT <include refid="plntColumns"/>
+        FROM CV.PLNT
+        WHERE PLAN_CODE = #{planCode}
+        ORDER BY VERSION DESC
+    </select>
+
+    <!-- 查詢所有險種註記 -->
+    <select id="findAll" resultType="com.vlife.cv.plan.PlanNote">
+        SELECT <include refid="plntColumns"/>
+        FROM CV.PLNT
+        ORDER BY PLAN_CODE, VERSION DESC
+    </select>
+
+</mapper>

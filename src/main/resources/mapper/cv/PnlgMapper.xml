@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.log.PnlgMapper">
+
+    <!-- 基礎欄位 SQL 片段 (ADR-016: 重用性) -->
+    <sql id="baseColumns">
+        PNLG_SERIAL as pnlgSerial,
+        OPERATOR as operator,
+        PROCESS_DATE as processDate,
+        ACTION_TYPE as actionType,
+        PLAN_CODE as planCode,
+        VERSION as version,
+        PLAN_TITLE as planTitle,
+        PLAN_NAME as planName,
+        CONTRACTED_NAME as contractedName,
+        LOW_AGE as lowAge,
+        HIGH_AGE as highAge,
+        LOW_AGE_SUB as lowAgeSub,
+        HIGH_AGE_SUB as highAgeSub,
+        LOW_AGE_IND as lowAgeInd,
+        HIGH_AGE_IND as highAgeInd,
+        REN_HIGH_AGE_IND as renHighAgeInd,
+        REN_HIGH_AGE as renHighAge,
+        PLAN_RELATION as planRelation,
+        PLAN_RELATION_SUB as planRelationSub,
+        FACE_AMT_TYPE as faceAmtType,
+        COLLECT_YEAR_IND as collectYearInd,
+        COLLECT_YEAR as collectYear,
+        EXP_YEAR_IND as expYearInd,
+        EXP_YEAR as expYear,
+        PLAN_START_DATE as planStartDate,
+        PLAN_END_DATE as planEndDate,
+        RBN_IND as rbnInd,
+        SBN_IND as sbnInd,
+        OTHER_SBN_IND as otherSbnInd,
+        ABN_IND as abnInd,
+        UW_IND as uwInd,
+        UW_AGE_14_SW as uwAge14Sw,
+        PRIMARY_RIDER_IND as primaryRiderInd,
+        RIDER_IND as riderInd,
+        MODX_IND as modxInd,
+        FACTOR_IND as factorInd,
+        PREM_CALC_TYPE as premCalcType,
+        PREM_VALUE as premValue,
+        UNIT_VALUE_IND as unitValueInd,
+        UNIT_VALUE as unitValue,
+        UNIT_VALUE2 as unitValue2,
+        UNIT_VALUE3 as unitValue3,
+        PLAN_TYPE as planType,
+        FACE_PREM_IND as facePremInd,
+        RISK_AMT_VALUE as riskAmtValue,
+        PLAT_IND as platInd,
+        RATE_PLAN_CODE as ratePlanCode,
+        RATE_VERSION as rateVersion,
+        RATE_SEX_IND as rateSexInd,
+        RATE_AGE_IND as rateAgeInd,
+        RATE_SUB_1_IND as rateSub1Ind,
+        RATE_SUB_2_IND as rateSub2Ind,
+        PRAT01_SW as prat01Sw,
+        DISC_TYPE as discType,
+        DISC_HIGH1_START as discHigh1Start,
+        DISC_PREM1_UNIT as discPrem1Unit,
+        DISC_PREM1_YEAR as discPrem1Year,
+        DISC_PREM1_HALF as discPrem1Half,
+        DISC_HIGH2_START as discHigh2Start,
+        DISC_PREM2_UNIT as discPrem2Unit,
+        DISC_PREM2_YEAR as discPrem2Year,
+        DISC_PREM2_HALF as discPrem2Half,
+        CHG_PREM1_IND as chgPrem1Ind,
+        CHG_PREM1_VALUE as chgPrem1Value,
+        CHG_PREM3_IND as chgPrem3Ind,
+        CHG_PREM3_VALUE as chgPrem3Value,
+        CHG_PREM3_DUR as chgPrem3Dur,
+        SR_PLAN_CODE as srPlanCode,
+        SR_VERSION as srVersion,
+        INSURANCE_TYPE as insuranceType,
+        INSURANCE_TYPE_2 as insuranceType2,
+        INSURANCE_TYPE_3 as insuranceType3,
+        INSURANCE_TYPE_4 as insuranceType4,
+        INSURANCE_TYPE_5 as insuranceType5,
+        DEATH_BENEF_IND as deathBenefInd,
+        CSV_CALC_TYPE as csvCalcType,
+        PUA_CALC_TYPE as puaCalcType,
+        ETE_CALC_TYPE as eteCalcType,
+        DIV_TYPE as divType,
+        DIV_PAY_ITEM_IND as divPayItemInd,
+        DIV_CALC_ITEM_IND as divCalcItemInd,
+        CV_DIV_CODE as cvDivCode,
+        DIV_START_YEAR as divStartYear,
+        DIV_SW_1 as divSw1,
+        DIV_SW_2 as divSw2,
+        DECL_PLAN_CODE as declPlanCode,
+        INT4_PLAN_CODE as int4PlanCode,
+        SURRENDER_IND as surrenderInd,
+        NFO as nfo,
+        LBENF as lbenf,
+        MBENF as mbenf,
+        DBENF as dbenf,
+        BBENF as bbenf,
+        CO_PAY_IND as coPayInd,
+        CO_PAY_DISC as coPayDisc,
+        ACNT_TYPE as acntType,
+        COMM_CLASS_CODE_I as commClassCodeI,
+        COMM_CLASS_CODE as commClassCode,
+        PROD_CLASS_CODE as prodClassCode,
+        BENEF_IND as benefInd,
+        DEDUCTIBLE_TYPE as deductibleType,
+        DEDUCTIBLE_AMT as deductibleAmt,
+        TREATY_CODE as treatyCode,
+        PLAN_CODE_SYS as planCodeSys,
+        FACE_AMT_UNIT as faceAmtUnit,
+        UW_PLAN_CODE as uwPlanCode,
+        UW_VERSION as uwVersion,
+        CV_PLAN_CODE as cvPlanCode,
+        CV_VERSION as cvVersion,
+        CSV_PRINT_IND as csvPrintInd,
+        CSV_PRINT_YEAR as csvPrintYear,
+        UV_PRINT_IND as uvPrintInd,
+        TOP_FACE_AMT as topFaceAmt,
+        YUR_PLAN_CODE as yurPlanCode,
+        YUR_VERSION as yurVersion,
+        RULE_CODE as ruleCode,
+        WAIV_CSV_IND as waivCsvInd,
+        WAIVER_PREM_IND as waiverPremInd,
+        SAVE_BENEF_IND as saveBenefInd,
+        PC_PLAN_CODE as pcPlanCode,
+        PC_VERSION as pcVersion,
+        LOAN_AVAL_IND as loanAvalInd,
+        LOAN_PLAN_CODE as loanPlanCode,
+        LOAN_VERSION as loanVersion,
+        LOAN_AVAL_PERCENT as loanAvalPercent,
+        RISK_PREM_IND as riskPremInd,
+        RISK_PREM_CODE as riskPremCode,
+        REPLACE_AGE_IND as replaceAgeInd,
+        REPLACE_AGE_CODE as replaceAgeCode,
+        SAL_PAY_SW as salPaySw,
+        PREPAY_SW as prepaySw,
+        ADD_AMT_SW as addAmtSw,
+        ANNY_SW as annySw,
+        DIV_SW_M as divSwM,
+        CURRENCY_1 as currency1,
+        PLAN_ACCOUNT_IND as planAccountInd,
+        PREM_LACK_IND as premLackInd,
+        RISK_PREM_SAS as riskPremSas,
+        MAT_LIFE_BEN_SAS as matLifeBenSas,
+        DEATH_BEN_SAS as deathBenSas,
+        PA_DEATH_BEN_SAS as paDeathBenSas,
+        PERSIST_REWARD_IND as persistRewardInd,
+        PERSIST_PREM_VAL as persistPremVal
+    </sql>
+
+    <!-- 根據日誌序號查詢 -->
+    <select id="findByPnlgSerial" resultType="com.vlife.cv.log.PolicyLog">
+        SELECT <include refid="baseColumns"/>
+        FROM CV.PNLG
+        WHERE PNLG_SERIAL = #{pnlgSerial}
+    </select>
+
+    <!-- 根據險種代碼與版本查詢歷史記錄 -->
+    <select id="findByPlanCodeAndVersion" resultType="com.vlife.cv.log.PolicyLog">
+        SELECT <include refid="baseColumns"/>
+        FROM CV.PNLG
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+        ORDER BY PROCESS_DATE DESC, PNLG_SERIAL DESC
+    </select>
+
+    <!-- 根據操作人員查詢 -->
+    <select id="findByOperator" resultType="com.vlife.cv.log.PolicyLog">
+        SELECT <include refid="baseColumns"/>
+        FROM CV.PNLG
+        WHERE OPERATOR = #{operator}
+        ORDER BY PROCESS_DATE DESC, PNLG_SERIAL DESC
+    </select>
+
+    <!-- 根據操作類型查詢 -->
+    <select id="findByActionType" resultType="com.vlife.cv.log.PolicyLog">
+        SELECT <include refid="baseColumns"/>
+        FROM CV.PNLG
+        WHERE ACTION_TYPE = #{actionType}
+        ORDER BY PROCESS_DATE DESC, PNLG_SERIAL DESC
+    </select>
+
+    <!-- 查詢全部記錄 -->
+    <select id="findAll" resultType="com.vlife.cv.log.PolicyLog">
+        SELECT <include refid="baseColumns"/>
+        FROM CV.PNLG
+        ORDER BY PROCESS_DATE DESC, PNLG_SERIAL DESC
+    </select>
+
+</mapper>

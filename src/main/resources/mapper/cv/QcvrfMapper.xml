@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.annuityreservefactor.QcvrfMapper">
+
+    <sql id="qcvrfColumns">
+        ANNY_PLAN_CODE as annyPlanCode,
+        STR_DATE as strDate,
+        END_DATE as endDate,
+        DUR_TYPE as durType,
+        DUR_YEAR as durYear,
+        PO_RVF_DEATH as poRvfDeath,
+        PO_RVF_TSO as poRvfTso,
+        RVF_DEATH as rvfDeath,
+        RVF_TSO as rvfTso,
+        INT_PLAN_CODE as intPlanCode
+    </sql>
+
+    <select id="findByAnnyPlanCode" resultType="com.vlife.cv.annuityreservefactor.AnnuityReserveFactor">
+        SELECT <include refid="qcvrfColumns"/>
+        FROM CV.QCVRF
+        WHERE ANNY_PLAN_CODE = #{annyPlanCode}
+    </select>
+
+    <select id="findByPk" resultType="com.vlife.cv.annuityreservefactor.AnnuityReserveFactor">
+        SELECT <include refid="qcvrfColumns"/>
+        FROM CV.QCVRF
+        WHERE ANNY_PLAN_CODE = #{annyPlanCode}
+          AND STR_DATE = #{strDate}
+          AND END_DATE = #{endDate}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.QCVRF (
+            ANNY_PLAN_CODE, STR_DATE, END_DATE,
+            DUR_TYPE, DUR_YEAR,
+            PO_RVF_DEATH, PO_RVF_TSO,
+            RVF_DEATH, RVF_TSO,
+            INT_PLAN_CODE
+        ) VALUES (
+            #{annyPlanCode}, #{strDate}, #{endDate},
+            #{durType}, #{durYear},
+            #{poRvfDeath}, #{poRvfTso},
+            #{rvfDeath}, #{rvfTso},
+            #{intPlanCode}
+        )
+    </insert>
+
+    <update id="updateByPk">
+        UPDATE CV.QCVRF
+        SET DUR_TYPE = #{entity.durType},
+            DUR_YEAR = #{entity.durYear},
+            PO_RVF_DEATH = #{entity.poRvfDeath},
+            PO_RVF_TSO = #{entity.poRvfTso},
+            RVF_DEATH = #{entity.rvfDeath},
+            RVF_TSO = #{entity.rvfTso},
+            INT_PLAN_CODE = #{entity.intPlanCode}
+        WHERE ANNY_PLAN_CODE = #{annyPlanCode}
+          AND STR_DATE = #{strDate}
+          AND END_DATE = #{endDate}
+    </update>
+
+    <delete id="deleteByPk">
+        DELETE FROM CV.QCVRF
+        WHERE ANNY_PLAN_CODE = #{annyPlanCode}
+          AND STR_DATE = #{strDate}
+          AND END_DATE = #{endDate}
+    </delete>
+
+</mapper>

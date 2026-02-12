@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.xcvrg.XcvrgMapper">
+
+    <sql id="xcvrgColumns">
+        REPLACE_AGE_CODE as replaceAgeCode,
+        RATE_SEX as rateSex,
+        RATE_AGE as rateAge,
+        RATE_SUB_AGE as rateSubAge,
+        RATE_AGE_CHG_IND as rateAgeChgInd
+    </sql>
+
+    <select id="findByPrimaryKey" resultType="com.vlife.cv.xcvrg.Xcvrg">
+        SELECT <include refid="xcvrgColumns"/>
+        FROM CV.XCVRG
+        WHERE REPLACE_AGE_CODE = #{replaceAgeCode}
+          AND RATE_SEX = #{rateSex}
+          AND RATE_AGE = #{rateAge}
+          AND RATE_SUB_AGE = #{rateSubAge}
+    </select>
+
+    <select id="countByPrimaryKey" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.XCVRG
+        WHERE REPLACE_AGE_CODE = #{replaceAgeCode}
+          AND RATE_SEX = #{rateSex}
+          AND RATE_AGE = #{rateAge}
+          AND RATE_SUB_AGE = #{rateSubAge}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.XCVRG (
+            REPLACE_AGE_CODE, RATE_SEX, RATE_AGE, RATE_SUB_AGE,
+            RATE_AGE_CHG_IND
+        ) VALUES (
+            #{replaceAgeCode}, #{rateSex}, #{rateAge}, #{rateSubAge},
+            #{rateAgeChgInd}
+        )
+    </insert>
+
+    <delete id="deleteByPrimaryKey">
+        DELETE FROM CV.XCVRG
+        WHERE REPLACE_AGE_CODE = #{replaceAgeCode}
+          AND RATE_SEX = #{rateSex}
+          AND RATE_AGE = #{rateAge}
+          AND RATE_SUB_AGE = #{rateSubAge}
+    </delete>
+
+</mapper>

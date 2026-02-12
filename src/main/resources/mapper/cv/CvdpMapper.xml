@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.dividend.CvdpMapper">
+
+    <sql id="cvdpColumns">
+        SERIAL_YEAR3 as serialYear3,
+        POLICY_NO as policyNo,
+        COVERAGE_NO as coverageNo,
+        PLAN_CODE as planCode,
+        VERSION as version,
+        DEATH_RATIO as deathRatio,
+        RATE_RATIO as rateRatio,
+        LOADING_RATIO as loadingRatio,
+        DEATH_DIV_VALUE as deathDivValue,
+        INT_DIV_VALUE as intDivValue,
+        EXPEN_DIV_VALUE as expenDivValue,
+        DIV_AMT as divAmt,
+        CVDP_CODE as cvdpCode,
+        DIV_DATE as divDate,
+        PROCESS_DATE as processDate
+    </sql>
+
+    <select id="findByPrimaryKey" resultType="com.vlife.cv.dividend.Cvdp">
+        SELECT <include refid="cvdpColumns"/>
+        FROM CV.CVDP
+        WHERE SERIAL_YEAR3 = #{serialYear3}
+          AND POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <select id="findBySerialYear3AndPolicyNo" resultType="com.vlife.cv.dividend.Cvdp">
+        SELECT <include refid="cvdpColumns"/>
+        FROM CV.CVDP
+        WHERE SERIAL_YEAR3 = #{serialYear3}
+          AND POLICY_NO = #{policyNo}
+        ORDER BY COVERAGE_NO
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.CVDP (
+            SERIAL_YEAR3, POLICY_NO, COVERAGE_NO,
+            PLAN_CODE, VERSION,
+            DEATH_RATIO, RATE_RATIO, LOADING_RATIO,
+            DEATH_DIV_VALUE, INT_DIV_VALUE, EXPEN_DIV_VALUE,
+            DIV_AMT, CVDP_CODE, DIV_DATE, PROCESS_DATE
+        ) VALUES (
+            #{serialYear3}, #{policyNo}, #{coverageNo},
+            #{planCode}, #{version},
+            #{deathRatio}, #{rateRatio}, #{loadingRatio},
+            #{deathDivValue}, #{intDivValue}, #{expenDivValue},
+            #{divAmt}, #{cvdpCode}, #{divDate}, #{processDate}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE CV.CVDP SET
+            PLAN_CODE = #{planCode},
+            VERSION = #{version},
+            DEATH_RATIO = #{deathRatio},
+            RATE_RATIO = #{rateRatio},
+            LOADING_RATIO = #{loadingRatio},
+            DEATH_DIV_VALUE = #{deathDivValue},
+            INT_DIV_VALUE = #{intDivValue},
+            EXPEN_DIV_VALUE = #{expenDivValue},
+            DIV_AMT = #{divAmt},
+            CVDP_CODE = #{cvdpCode},
+            DIV_DATE = #{divDate},
+            PROCESS_DATE = #{processDate}
+        WHERE SERIAL_YEAR3 = #{serialYear3}
+          AND POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM CV.CVDP
+        WHERE SERIAL_YEAR3 = #{serialYear3}
+          AND POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </delete>
+
+</mapper>

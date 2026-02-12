@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.rate.QiratMapper">
+
+    <sql id="qiratColumns">
+        SUB_ACNT_PLAN_CODE as subAcntPlanCode,
+        INT_RATE_TYPE as intRateType,
+        INT_RATE_DATE_STR as intRateDateStr,
+        INT_RATE_DATE_END as intRateDateEnd,
+        INT_RATE as intRate
+    </sql>
+
+    <select id="findByBaseDate" resultType="com.vlife.cv.rate.SubAccountInterestRate">
+        SELECT <include refid="qiratColumns"/>
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND (INT_RATE_DATE_STR IS NULL OR INT_RATE_DATE_STR <![CDATA[<=]]> #{baseDate})
+          AND INT_RATE_DATE_END <![CDATA[>=]]> #{baseDate}
+    </select>
+
+    <select id="findMaxBeforeDate" resultType="com.vlife.cv.rate.SubAccountInterestRate">
+        SELECT <include refid="qiratColumns"/>
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND (INT_RATE_DATE_END IS NULL OR INT_RATE_DATE_END <![CDATA[<]]> #{baseDate})
+        ORDER BY INT_RATE_DATE_END DESC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <select id="existsByPlanAndType" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+    </select>
+
+    <select id="existsByFullKey" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND INT_RATE_DATE_STR = #{intRateDateStr}
+    </select>
+
+    <select id="findByDateAfterOrEqual" resultType="com.vlife.cv.rate.SubAccountInterestRate">
+        SELECT <include refid="qiratColumns"/>
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND INT_RATE_DATE_STR <![CDATA[>=]]> #{intRateDateStr}
+        ORDER BY INT_RATE_DATE_STR ASC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <select id="findMaxStartDate" resultType="java.time.LocalDate">
+        SELECT MAX(INT_RATE_DATE_STR)
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+    </select>
+
+    <select id="findByProcessYm" resultType="com.vlife.cv.rate.SubAccountInterestRate">
+        SELECT <include refid="qiratColumns"/>
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND TO_CHAR(INT_RATE_DATE_END, 'YYYY/MM') = #{processYm}
+        ORDER BY INT_RATE_DATE_END ASC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <select id="findByFullKey" resultType="com.vlife.cv.rate.SubAccountInterestRate">
+        SELECT <include refid="qiratColumns"/>
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          <if test="intRateDateStr != null">
+            AND INT_RATE_DATE_STR = #{intRateDateStr}
+          </if>
+          <if test="intRateDateEnd != null">
+            AND INT_RATE_DATE_END = #{intRateDateEnd}
+          </if>
+        ORDER BY INT_RATE_DATE_END DESC
+        FETCH FIRST 1 ROWS ONLY
+    </select>
+
+    <select id="countByPlanAndType" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+        <if test="intRateType != null">
+          AND INT_RATE_TYPE = #{intRateType}
+        </if>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.QIRAT (
+            SUB_ACNT_PLAN_CODE, INT_RATE_TYPE, INT_RATE_DATE_STR,
+            INT_RATE_DATE_END, INT_RATE
+        ) VALUES (
+            #{rate.subAcntPlanCode}, #{rate.intRateType}, #{rate.intRateDateStr},
+            #{rate.intRateDateEnd}, #{rate.intRate}
+        )
+    </insert>
+
+    <update id="updateEndDate">
+        UPDATE CV.QIRAT
+        SET INT_RATE_DATE_END = #{intRateDateEnd}
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND INT_RATE_DATE_STR = #{intRateDateStr}
+    </update>
+
+    <update id="updateStartDate">
+        UPDATE CV.QIRAT
+        SET INT_RATE_DATE_STR = #{intRateDateStr}
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND INT_RATE_DATE_END = #{intRateDateEnd}
+    </update>
+
+    <update id="updateRate">
+        UPDATE CV.QIRAT
+        SET INT_RATE = #{intRate}
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND INT_RATE_DATE_STR = #{intRateDateStr}
+          AND INT_RATE_DATE_END = #{intRateDateEnd}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM CV.QIRAT
+        WHERE SUB_ACNT_PLAN_CODE = #{subAcntPlanCode}
+          AND INT_RATE_TYPE = #{intRateType}
+          AND INT_RATE_DATE_STR = #{intRateDateStr}
+          AND INT_RATE_DATE_END = #{intRateDateEnd}
+    </delete>
+
+</mapper>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.actuarial.UvalblbsMapper">
+
+    <sql id="valueBlockSubColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        SEX as sex,
+        AGE as age,
+        SEX_SUB as sexSub,
+        AGE_SUB as ageSub,
+        UV_SUB_1 as uvSub1,
+        UV_SUB_2 as uvSub2,
+        RECORD_TYPE as recordType,
+        VALUE1 as values
+    </sql>
+
+    <sql id="primaryKeyCondition">
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND SEX_SUB = #{sexSub}
+          AND AGE_SUB = #{ageSub}
+          AND UV_SUB_1 = #{uvSub1}
+          AND UV_SUB_2 = #{uvSub2}
+          AND RECORD_TYPE = #{recordType}
+    </sql>
+
+    <select id="findByPrimaryKey" resultType="com.vlife.cv.actuarial.ValueBlockSub">
+        SELECT <include refid="valueBlockSubColumns"/>
+        FROM CV.UVALBLBS
+        <include refid="primaryKeyCondition"/>
+    </select>
+
+    <select id="countByPrimaryKey" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.UVALBLBS
+        <include refid="primaryKeyCondition"/>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.UVALBLBS (
+            PLAN_CODE, VERSION, SEX, AGE,
+            SEX_SUB, AGE_SUB, UV_SUB_1, UV_SUB_2,
+            RECORD_TYPE, VALUE1
+        ) VALUES (
+            #{planCode}, #{version}, #{sex}, #{age},
+            #{sexSub}, #{ageSub}, #{uvSub1}, #{uvSub2},
+            #{recordType}, #{values}
+        )
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM CV.UVALBLBS
+        <include refid="primaryKeyCondition"/>
+    </delete>
+
+</mapper>

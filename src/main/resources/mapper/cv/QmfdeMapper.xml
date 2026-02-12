@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.quote.QmfdeMapper">
+
+    <sql id="qmfdeColumns">
+        IV_TARGET_CODE     as ivTargetCode,
+        IV_TARGET_TITLE    as ivTargetTitle,
+        IV_COMPANY_CODE    as ivCompanyCode,
+        IV_CURRENCY        as ivCurrency,
+        IV_STANDARD_CODE   as ivStandardCode,
+        SUB_ACNT_TYPE      as subAcntType,
+        SUB_ACNT_PLAN_CODE as subAcntPlanCode,
+        SUB_ACNT_CALC_TYPE as subAcntCalcType,
+        SUB_ACNT_TYPE_2    as subAcntType2,
+        INT_CALC_PROC      as intCalcProc,
+        IV_TYPE            as ivType,
+        IV_MIN_AMT         as ivMinAmt,
+        FUND_MIN_AMT       as fundMinAmt,
+        IV_UNIT            as ivUnit,
+        IV_COST_PRICE      as ivCostPrice,
+        IV_COST_EXRT       as ivCostExrt,
+        IV_COST_VAL        as ivCostVal,
+        UPDATE_DATE        as updateDate,
+        INVENTORY_QTY      as inventoryQty,
+        PRINCIPLE_FREQ     as principleFreq,
+        BUNDLE_INV_IND     as bundleInvInd,
+        NBDT_PLAN_CODE     as nbdtPlanCode,
+        PC_DUR_PLAN        as pcDurPlan,
+        START_DATE         as startDate,
+        EXPIRED_DATE       as expiredDate,
+        QMFDE_STR_DATE     as qmfdeStrDate,
+        QMFDE_END_DATE     as qmfdeEndDate,
+        QMFDE_ENTRY_IND    as qmfdeEntryInd,
+        MATURE_VAL_RATE    as matureValRate,
+        IV_TARGET_YIELD    as ivTargetYield,
+        PROD_RATE1         as prodRate1,
+        IV_PROFIT_RATE     as ivProfitRate,
+        IV_PERCENT_TYPE    as ivPercentType,
+        IV_PERCENT_N       as ivPercentN,
+        IV_PERCENT_STR     as ivPercentStr,
+        IV_PERCENT_END     as ivPercentEnd,
+        INT_APPLY_YR_IND   as intApplyYrInd,
+        INT_APPLY_YR       as intApplyYr,
+        IV_SALES_END_DATE  as ivSalesEndDate,
+        QMFDE_AMT          as qmfdeAmt,
+        INVEST_2ND_DATE    as invest2ndDate,
+        INVEST_3TH_DATE    as invest3thDate,
+        INT_PLAN_CODE      as intPlanCode,
+        LOWEST_IVEST_REWARD    as lowestIvestReward,
+        FY_FIXED_REWARD        as fyFixedReward,
+        LOWEST_GUARANTEE_REWARD as lowestGuaranteeReward,
+        STANDARD_REWARD        as standardReward
+    </sql>
+
+    <select id="findByTargetCode" resultType="com.vlife.cv.quote.Qmfde">
+        SELECT <include refid="qmfdeColumns"/>
+        FROM CV.QMFDE
+        WHERE IV_TARGET_CODE = #{ivTargetCode}
+    </select>
+
+    <select id="findByStandardCode" resultType="com.vlife.cv.quote.Qmfde">
+        SELECT <include refid="qmfdeColumns"/>
+        FROM CV.QMFDE
+        WHERE IV_STANDARD_CODE = #{ivStandardCode}
+    </select>
+
+    <select id="countByPlanCodeAndVersionAndDate" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.QMFDE q
+        INNER JOIN CV.PLND p
+            ON q.IV_TARGET_CODE = p.IV_TARGET_CODE
+        WHERE p.PLAN_CODE = #{planCode}
+          AND p.VERSION = #{version}
+          AND (q.START_DATE IS NULL OR q.START_DATE &lt;= #{date})
+          AND (q.EXPIRED_DATE IS NULL OR q.EXPIRED_DATE &gt;= #{date})
+    </select>
+
+    <select id="countByEntryInd" resultType="int">
+        SELECT COUNT(*)
+        FROM CV.QMFDE
+        WHERE QMFDE_ENTRY_IND = #{qmfdeEntryInd}
+    </select>
+
+    <select id="exists" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM CV.QMFDE
+        WHERE IV_TARGET_CODE = #{ivTargetCode}
+    </select>
+
+    <select id="existsByStandardCode" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM CV.QMFDE
+        WHERE IV_STANDARD_CODE = #{ivStandardCode}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.QMFDE (
+            IV_TARGET_CODE, IV_TARGET_TITLE, IV_COMPANY_CODE, IV_CURRENCY, IV_STANDARD_CODE,
+            SUB_ACNT_TYPE, SUB_ACNT_PLAN_CODE, SUB_ACNT_CALC_TYPE, SUB_ACNT_TYPE_2,
+            INT_CALC_PROC, IV_TYPE, IV_MIN_AMT, FUND_MIN_AMT,
+            IV_UNIT, IV_COST_PRICE, IV_COST_EXRT, IV_COST_VAL,
+            UPDATE_DATE, INVENTORY_QTY, PRINCIPLE_FREQ,
+            BUNDLE_INV_IND, NBDT_PLAN_CODE, PC_DUR_PLAN,
+            START_DATE, EXPIRED_DATE, QMFDE_STR_DATE, QMFDE_END_DATE,
+            QMFDE_ENTRY_IND, MATURE_VAL_RATE, IV_TARGET_YIELD, PROD_RATE1, IV_PROFIT_RATE,
+            IV_PERCENT_TYPE, IV_PERCENT_N, IV_PERCENT_STR, IV_PERCENT_END,
+            INT_APPLY_YR_IND, INT_APPLY_YR,
+            IV_SALES_END_DATE, QMFDE_AMT, INVEST_2ND_DATE, INVEST_3TH_DATE,
+            INT_PLAN_CODE, LOWEST_IVEST_REWARD, FY_FIXED_REWARD, LOWEST_GUARANTEE_REWARD, STANDARD_REWARD
+        ) VALUES (
+            #{ivTargetCode}, #{ivTargetTitle}, #{ivCompanyCode}, #{ivCurrency}, #{ivStandardCode},
+            #{subAcntType}, #{subAcntPlanCode}, #{subAcntCalcType}, #{subAcntType2},
+            #{intCalcProc}, #{ivType}, #{ivMinAmt}, #{fundMinAmt},
+            #{ivUnit}, #{ivCostPrice}, #{ivCostExrt}, #{ivCostVal},
+            #{updateDate}, #{inventoryQty}, #{principleFreq},
+            #{bundleInvInd}, #{nbdtPlanCode}, #{pcDurPlan},
+            #{startDate}, #{expiredDate}, #{qmfdeStrDate}, #{qmfdeEndDate},
+            #{qmfdeEntryInd}, #{matureValRate}, #{ivTargetYield}, #{prodRate1}, #{ivProfitRate},
+            #{ivPercentType}, #{ivPercentN}, #{ivPercentStr}, #{ivPercentEnd},
+            #{intApplyYrInd}, #{intApplyYr},
+            #{ivSalesEndDate}, #{qmfdeAmt}, #{invest2ndDate}, #{invest3thDate},
+            #{intPlanCode}, #{lowestIvestReward}, #{fyFixedReward}, #{lowestGuaranteeReward}, #{standardReward}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE CV.QMFDE SET
+            IV_TARGET_TITLE    = #{ivTargetTitle},
+            IV_COMPANY_CODE    = #{ivCompanyCode},
+            IV_CURRENCY        = #{ivCurrency},
+            IV_STANDARD_CODE   = #{ivStandardCode},
+            SUB_ACNT_TYPE      = #{subAcntType},
+            SUB_ACNT_PLAN_CODE = #{subAcntPlanCode},
+            SUB_ACNT_CALC_TYPE = #{subAcntCalcType},
+            SUB_ACNT_TYPE_2    = #{subAcntType2},
+            INT_CALC_PROC      = #{intCalcProc},
+            IV_TYPE            = #{ivType},
+            IV_MIN_AMT         = #{ivMinAmt},
+            FUND_MIN_AMT       = #{fundMinAmt},
+            IV_UNIT            = #{ivUnit},
+            IV_COST_PRICE      = #{ivCostPrice},
+            IV_COST_EXRT       = #{ivCostExrt},
+            IV_COST_VAL        = #{ivCostVal},
+            UPDATE_DATE        = #{updateDate},
+            INVENTORY_QTY      = #{inventoryQty},
+            PRINCIPLE_FREQ     = #{principleFreq},
+            BUNDLE_INV_IND     = #{bundleInvInd},
+            NBDT_PLAN_CODE     = #{nbdtPlanCode},
+            PC_DUR_PLAN        = #{pcDurPlan},
+            START_DATE         = #{startDate},
+            EXPIRED_DATE       = #{expiredDate},
+            QMFDE_STR_DATE     = #{qmfdeStrDate},
+            QMFDE_END_DATE     = #{qmfdeEndDate},
+            QMFDE_ENTRY_IND    = #{qmfdeEntryInd},
+            MATURE_VAL_RATE    = #{matureValRate},
+            IV_TARGET_YIELD    = #{ivTargetYield},
+            PROD_RATE1         = #{prodRate1},
+            IV_PROFIT_RATE     = #{ivProfitRate},
+            IV_PERCENT_TYPE    = #{ivPercentType},
+            IV_PERCENT_N       = #{ivPercentN},
+            IV_PERCENT_STR     = #{ivPercentStr},
+            IV_PERCENT_END     = #{ivPercentEnd},
+            INT_APPLY_YR_IND   = #{intApplyYrInd},
+            INT_APPLY_YR       = #{intApplyYr},
+            IV_SALES_END_DATE  = #{ivSalesEndDate},
+            QMFDE_AMT          = #{qmfdeAmt},
+            INVEST_2ND_DATE    = #{invest2ndDate},
+            INVEST_3TH_DATE    = #{invest3thDate},
+            INT_PLAN_CODE      = #{intPlanCode},
+            LOWEST_IVEST_REWARD    = #{lowestIvestReward},
+            FY_FIXED_REWARD        = #{fyFixedReward},
+            LOWEST_GUARANTEE_REWARD = #{lowestGuaranteeReward},
+            STANDARD_REWARD        = #{standardReward}
+        WHERE IV_TARGET_CODE = #{ivTargetCode}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM CV.QMFDE
+        WHERE IV_TARGET_CODE = #{ivTargetCode}
+    </delete>
+
+</mapper>

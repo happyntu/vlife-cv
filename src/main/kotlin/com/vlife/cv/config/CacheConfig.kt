@@ -46,6 +46,23 @@ class CacheConfig {
         // PRAT (費率) 快取
         const val CACHE_PLAN_RATE = "planRate"
 
+        // PLND (險種投資標的配置) 快取
+        const val CACHE_PLND = "plnd"
+
+        // QCVRF (年金準備金因子) 快取
+        const val CACHE_QCVRF = "qcvrf"
+
+        // QIRAT (分帳利率) 快取
+        const val CACHE_QIRAT = "qirat"
+        const val CACHE_QIRAT_STRICT = "qirat-strict"
+
+        // QMFDE (報價主檔明細) 快取
+        const val CACHE_QMFDE = "qmfde"
+
+        // UVAL (精算值) 快取
+        const val CACHE_UVAL = "uval"
+        const val CACHE_UVALBLB = "uvalblb"
+
         /** 快取 TTL：1 小時（佣金率等資料變更頻率低，每日批次更新） */
         private const val DEFAULT_EXPIRE_HOURS = 1L
 
@@ -74,7 +91,14 @@ class CacheConfig {
                     CACHE_PLDF_BY_PK,
                     CACHE_PLDF_BY_PLAN_CODE,
                     CACHE_PLDF_EFFECTIVE,
-                    CACHE_PLAN_RATE
+                    CACHE_PLAN_RATE,
+                    CACHE_PLND,
+                    CACHE_QCVRF,
+                    CACHE_QIRAT,
+                    CACHE_QIRAT_STRICT,
+                    CACHE_QMFDE,
+                    CACHE_UVAL,
+                    CACHE_UVALBLB
                 )
             )
         }

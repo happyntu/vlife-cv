@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.plnd.PlndMapper">
+
+    <sql id="tableColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        IV_TARGET_CODE as ivTargetCode,
+        IV_APPL_IND as ivApplInd,
+        IV_PERCENT as ivPercent,
+        IVHS_CODE_C as ivhsCodeC
+    </sql>
+
+    <select id="exists" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+    </select>
+
+    <select id="findByPlanCodeAndVersion" resultType="com.vlife.cv.plnd.Plnd">
+        SELECT <include refid="tableColumns"/>
+        FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+        ORDER BY IV_TARGET_CODE, IV_APPL_IND
+    </select>
+
+    <select id="findByPlanCodeAndVersionAndTargetCode" resultType="com.vlife.cv.plnd.Plnd">
+        SELECT <include refid="tableColumns"/>
+        FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND IV_TARGET_CODE = #{ivTargetCode}
+          AND (IV_APPL_IND IS NULL OR IV_APPL_IND != '3')
+        ORDER BY IV_APPL_IND
+    </select>
+
+    <select id="findByAllConditions" resultType="com.vlife.cv.plnd.Plnd">
+        SELECT <include refid="tableColumns"/>
+        FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND IV_TARGET_CODE = #{ivTargetCode}
+          AND IV_APPL_IND = #{ivApplInd}
+    </select>
+
+    <select id="sumRatioByPlanCodeAndVersion" resultType="java.math.BigDecimal">
+        SELECT SUM(IV_PERCENT)
+        FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND IV_APPL_IND IN ('1', '2')
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.PLND (
+            PLAN_CODE, VERSION, IV_TARGET_CODE, IV_APPL_IND,
+            IV_PERCENT, IVHS_CODE_C
+        ) VALUES (
+            #{planCode}, #{version}, #{ivTargetCode}, #{ivApplInd},
+            #{ivPercent}, #{ivhsCodeC}
+        )
+    </insert>
+
+    <update id="updateByPlanCodeAndVersion">
+        UPDATE CV.PLND
+        SET IV_PERCENT = #{entity.ivPercent},
+            IVHS_CODE_C = #{entity.ivhsCodeC}
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND IV_TARGET_CODE = #{entity.ivTargetCode}
+          AND IV_APPL_IND = #{entity.ivApplInd}
+    </update>
+
+    <update id="updateByAllConditions">
+        UPDATE CV.PLND
+        SET IV_PERCENT = #{ivPercent},
+            IVHS_CODE_C = #{ivhsCodeC}
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND IV_TARGET_CODE = #{ivTargetCode}
+          AND IV_APPL_IND = #{ivApplInd}
+    </update>
+
+    <delete id="deleteByPlanCodeAndVersion">
+        DELETE FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+    </delete>
+
+    <delete id="deleteByAllConditions">
+        DELETE FROM CV.PLND
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND IV_TARGET_CODE = #{ivTargetCode}
+          AND IV_APPL_IND = #{ivApplInd}
+    </delete>
+
+    <select id="findEffectiveDatesByTargetCode" resultType="com.vlife.cv.plnd.PlndDateRangeDto">
+        SELECT MIN(b.PLAN_START_DATE) as minStartDate,
+               MAX(b.PLAN_END_DATE) as maxEndDate
+        FROM CV.PLND a
+        INNER JOIN CV.PLDF b ON a.PLAN_CODE = b.PLAN_CODE
+                            AND a.VERSION = b.VERSION
+        WHERE a.IV_TARGET_CODE = #{ivTargetCode}
+    </select>
+
+</mapper>

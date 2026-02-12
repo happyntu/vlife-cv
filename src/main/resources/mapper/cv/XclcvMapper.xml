@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.exclusion.XclcvMapper">
+
+    <!-- SQL 片段：所有欄位 (ADR-016: 禁止 SELECT *) -->
+    <sql id="xclcvColumns">
+        XCLCV_SERIAL as id,
+        POLICY_NO as policyNo,
+        CLAIM_NO as claimNo,
+        COVERAGE_NO as coverageNo,
+        BENEF_CODE as benefCode,
+        EVENT_DATE_S as eventDateS,
+        PROCESS_DATE as processDate,
+        CLBF_RVF_IND as clbfRvfInd,
+        CODT_STATUS_CODE as codtStatusCode,
+        CODT_STATUS_CODE2 as codtStatusCode2
+    </sql>
+
+    <!-- 計算保單+險種序號的記錄數 -->
+    <select id="countByPolicyAndCoverage" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.XCLCV
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <!-- 依優先權查詢：CLBF_RVF_IND 優先順序 2→1, Z→2, 3→3, ELSE→9 -->
+    <select id="findByPolicyAndCoverageWithPriority" resultType="com.vlife.cv.exclusion.Xclcv">
+        SELECT <include refid="xclcvColumns"/>
+        FROM (
+            SELECT t.*,
+                   CASE t.CLBF_RVF_IND
+                       WHEN '2' THEN 1
+                       WHEN 'Z' THEN 2
+                       WHEN '3' THEN 3
+                       ELSE 9
+                   END as clbf_rvf_ind_order
+            FROM CV.XCLCV t
+            WHERE t.POLICY_NO = #{policyNo}
+              AND t.COVERAGE_NO = #{coverageNo}
+              AND t.EVENT_DATE_S &lt;= #{eventDateS}
+            ORDER BY t.EVENT_DATE_S DESC, clbf_rvf_ind_order ASC, t.PROCESS_DATE DESC
+        )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 依 CLBF_RVF_IND 精確查詢（取最新一筆） -->
+    <select id="findByPolicyCoverageAndInd" resultType="com.vlife.cv.exclusion.Xclcv">
+        SELECT <include refid="xclcvColumns"/>
+        FROM (
+            SELECT t.*
+            FROM CV.XCLCV t
+            WHERE t.POLICY_NO = #{policyNo}
+              AND t.COVERAGE_NO = #{coverageNo}
+              AND t.CLBF_RVF_IND = #{clbfRvfInd}
+            ORDER BY t.EVENT_DATE_S DESC, t.PROCESS_DATE DESC
+        )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 依狀態碼查詢：codtStatusCode2 可能為 null -->
+    <select id="findByPolicyCoverageAndStatus" resultType="com.vlife.cv.exclusion.Xclcv">
+        SELECT <include refid="xclcvColumns"/>
+        FROM (
+            SELECT t.*
+            FROM CV.XCLCV t
+            WHERE t.POLICY_NO = #{policyNo}
+              AND t.COVERAGE_NO = #{coverageNo}
+              AND t.CODT_STATUS_CODE = #{codtStatusCode}
+              <choose>
+                  <when test="codtStatusCode2 != null">
+                      AND t.CODT_STATUS_CODE2 = #{codtStatusCode2}
+                  </when>
+                  <otherwise>
+                      AND t.CODT_STATUS_CODE2 IS NULL
+                  </otherwise>
+              </choose>
+            ORDER BY t.EVENT_DATE_S DESC, t.PROCESS_DATE DESC
+        )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 依 CLBF_RVF_IND 正規表示式匹配查詢 -->
+    <select id="findByPolicyCoverageAndIndPattern" resultType="com.vlife.cv.exclusion.Xclcv">
+        SELECT <include refid="xclcvColumns"/>
+        FROM (
+            SELECT t.*
+            FROM CV.XCLCV t
+            WHERE t.POLICY_NO = #{policyNo}
+              AND t.COVERAGE_NO = #{coverageNo}
+              AND REGEXP_LIKE(t.CLBF_RVF_IND, #{clbfRvfIndPattern})
+            ORDER BY t.EVENT_DATE_S DESC, t.PROCESS_DATE DESC
+        )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 取最新一筆記錄 -->
+    <select id="findLatestByPolicyAndCoverage" resultType="com.vlife.cv.exclusion.Xclcv">
+        SELECT <include refid="xclcvColumns"/>
+        FROM (
+            SELECT t.*
+            FROM CV.XCLCV t
+            WHERE t.POLICY_NO = #{policyNo}
+              AND t.COVERAGE_NO = #{coverageNo}
+            ORDER BY t.EVENT_DATE_S DESC, t.PROCESS_DATE DESC
+        )
+        WHERE ROWNUM = 1
+    </select>
+
+    <!-- 新增：id 由 SQ_XCLCV_SERIAL Sequence 產生 -->
+    <insert id="insert">
+        INSERT INTO CV.XCLCV (
+            XCLCV_SERIAL,
+            POLICY_NO,
+            CLAIM_NO,
+            COVERAGE_NO,
+            BENEF_CODE,
+            EVENT_DATE_S,
+            PROCESS_DATE,
+            CLBF_RVF_IND,
+            CODT_STATUS_CODE,
+            CODT_STATUS_CODE2
+        ) VALUES (
+            SQ_XCLCV_SERIAL.NEXTVAL,
+            #{policyNo},
+            #{claimNo},
+            #{coverageNo},
+            #{benefCode},
+            #{eventDateS},
+            #{processDate},
+            #{clbfRvfInd},
+            #{codtStatusCode},
+            #{codtStatusCode2}
+        )
+    </insert>
+
+    <!-- 依理賠號碼刪除 -->
+    <delete id="deleteByClaimNo">
+        DELETE FROM CV.XCLCV
+        WHERE CLAIM_NO = #{claimNo}
+    </delete>
+
+</mapper>

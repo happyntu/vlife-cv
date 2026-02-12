@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.exclusion.XclrsMapper">
+
+    <sql id="xclrsColumns">
+        XCLRS_SERIAL as xclrsSerial,
+        CLAIM_RECE_NO as claimReceNo,
+        EVENT_ID as eventId,
+        CLAIM_TYPE as claimType,
+        CLAIM_TYPE_SUB as claimTypeSub,
+        XCLRS_CODE as xclrsCode,
+        EVENT_DATE_S as eventDateS,
+        PROCESS_DATE as processDate
+    </sql>
+
+    <select id="findByXclrsSerial" resultType="com.vlife.cv.exclusion.Xclrs">
+        SELECT <include refid="xclrsColumns"/>
+        FROM CV.XCLRS
+        WHERE XCLRS_SERIAL = #{xclrsSerial}
+    </select>
+
+    <select id="findByClaimReceNoAndClaimTypeAndXclrsCode"
+            resultType="com.vlife.cv.exclusion.Xclrs">
+        SELECT <include refid="xclrsColumns"/>
+        FROM CV.XCLRS
+        WHERE CLAIM_RECE_NO = #{claimReceNo}
+          AND CLAIM_TYPE = #{claimType}
+          AND XCLRS_CODE = #{xclrsCode}
+    </select>
+
+    <select id="findFirstByClaimReceNoAndClaimType"
+            resultType="com.vlife.cv.exclusion.Xclrs">
+        SELECT <include refid="xclrsColumns"/>
+        FROM CV.XCLRS
+        WHERE CLAIM_RECE_NO = #{claimReceNo}
+          AND CLAIM_TYPE = #{claimType}
+        FETCH FIRST 1 ROW ONLY
+    </select>
+
+    <select id="findByClaimReceNo" resultType="com.vlife.cv.exclusion.Xclrs">
+        SELECT <include refid="xclrsColumns"/>
+        FROM CV.XCLRS
+        WHERE CLAIM_RECE_NO = #{claimReceNo}
+        ORDER BY XCLRS_SERIAL
+    </select>
+
+    <select id="findByEventId" resultType="com.vlife.cv.exclusion.Xclrs">
+        SELECT <include refid="xclrsColumns"/>
+        FROM CV.XCLRS
+        WHERE EVENT_ID = #{eventId}
+        ORDER BY XCLRS_SERIAL
+    </select>
+
+    <insert id="insert">
+        <selectKey keyProperty="xclrsSerial" resultType="long" order="BEFORE">
+            SELECT SQ_XCLRS_SERIAL.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO CV.XCLRS (
+            XCLRS_SERIAL, CLAIM_RECE_NO, EVENT_ID,
+            CLAIM_TYPE, CLAIM_TYPE_SUB, XCLRS_CODE,
+            EVENT_DATE_S, PROCESS_DATE
+        ) VALUES (
+            #{xclrsSerial}, #{claimReceNo}, #{eventId},
+            #{claimType}, #{claimTypeSub}, #{xclrsCode},
+            #{eventDateS}, #{processDate}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE CV.XCLRS SET
+            CLAIM_RECE_NO = #{claimReceNo},
+            EVENT_ID = #{eventId},
+            CLAIM_TYPE = #{claimType},
+            CLAIM_TYPE_SUB = #{claimTypeSub},
+            XCLRS_CODE = #{xclrsCode},
+            EVENT_DATE_S = #{eventDateS},
+            PROCESS_DATE = #{processDate}
+        WHERE XCLRS_SERIAL = #{xclrsSerial}
+    </update>
+
+    <delete id="deleteByXclrsSerial">
+        DELETE FROM CV.XCLRS
+        WHERE XCLRS_SERIAL = #{xclrsSerial}
+    </delete>
+
+    <delete id="deleteByClaimReceNo">
+        DELETE FROM CV.XCLRS
+        WHERE CLAIM_RECE_NO = #{claimReceNo}
+    </delete>
+
+</mapper>

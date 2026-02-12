@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.actuarial.UvalMapper">
+
+    <sql id="uvalColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        SEX as sex,
+        AGE as age,
+        RECORD_TYPE as recordType,
+        SERIAL_YEAR as serialYear,
+        DEATH_RATE as deathRate,
+        UV_RVF_RATE as uvRvfRate,
+        UVAL_VALUE as uvalValue
+    </sql>
+
+    <sql id="fullKeyCondition">
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND RECORD_TYPE = #{recordType}
+          AND SERIAL_YEAR = #{serialYear}
+          AND DEATH_RATE = #{deathRate}
+          AND UV_RVF_RATE = #{uvRvfRate}
+    </sql>
+
+    <!-- ===== 查詢 ===== -->
+
+    <select id="findByPrimaryKey" resultType="com.vlife.cv.actuarial.UniversalValue">
+        SELECT <include refid="uvalColumns"/>
+        FROM CV.UVAL
+        <include refid="fullKeyCondition"/>
+    </select>
+
+    <select id="countByPlanCode" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.UVAL
+        WHERE PLAN_CODE = #{planCode}
+    </select>
+
+    <select id="countByFullKey" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.UVAL
+        <include refid="fullKeyCondition"/>
+    </select>
+
+    <!-- ===== 新增 ===== -->
+
+    <insert id="insert" parameterType="com.vlife.cv.actuarial.UniversalValue">
+        INSERT INTO CV.UVAL (
+            PLAN_CODE, VERSION, SEX, AGE, RECORD_TYPE,
+            SERIAL_YEAR, DEATH_RATE, UV_RVF_RATE, UVAL_VALUE
+        ) VALUES (
+            #{planCode}, #{version}, #{sex}, #{age}, #{recordType},
+            #{serialYear}, #{deathRate}, #{uvRvfRate}, #{uvalValue}
+        )
+    </insert>
+
+    <!-- ===== 更新 ===== -->
+
+    <update id="updateByPartialKey">
+        UPDATE CV.UVAL
+        SET PLAN_CODE = #{entity.planCode},
+            VERSION = #{entity.version},
+            SEX = #{entity.sex},
+            AGE = #{entity.age},
+            RECORD_TYPE = #{entity.recordType},
+            SERIAL_YEAR = #{entity.serialYear},
+            DEATH_RATE = #{entity.deathRate},
+            UV_RVF_RATE = #{entity.uvRvfRate},
+            UVAL_VALUE = #{entity.uvalValue}
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND RECORD_TYPE = #{recordType}
+          AND SERIAL_YEAR = #{serialYear}
+    </update>
+
+    <update id="updateByFullKey">
+        UPDATE CV.UVAL
+        SET PLAN_CODE = #{entity.planCode},
+            VERSION = #{entity.version},
+            SEX = #{entity.sex},
+            AGE = #{entity.age},
+            RECORD_TYPE = #{entity.recordType},
+            SERIAL_YEAR = #{entity.serialYear},
+            DEATH_RATE = #{entity.deathRate},
+            UV_RVF_RATE = #{entity.uvRvfRate},
+            UVAL_VALUE = #{entity.uvalValue}
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND RECORD_TYPE = #{recordType}
+          AND SERIAL_YEAR = #{serialYear}
+          AND DEATH_RATE = #{deathRate}
+          AND UV_RVF_RATE = #{uvRvfRate}
+    </update>
+
+    <!-- ===== 刪除 ===== -->
+
+    <delete id="deleteByPartialKey">
+        DELETE FROM CV.UVAL
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND RECORD_TYPE = #{recordType}
+          AND SERIAL_YEAR = #{serialYear}
+    </delete>
+
+    <delete id="deleteByReducedKey">
+        DELETE FROM CV.UVAL
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND SERIAL_YEAR = #{serialYear}
+    </delete>
+
+    <delete id="deleteByFullKey">
+        DELETE FROM CV.UVAL
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND SEX = #{sex}
+          AND AGE = #{age}
+          AND RECORD_TYPE = #{recordType}
+          AND SERIAL_YEAR = #{serialYear}
+          AND DEATH_RATE = #{deathRate}
+          AND UV_RVF_RATE = #{uvRvfRate}
+    </delete>
+
+</mapper>

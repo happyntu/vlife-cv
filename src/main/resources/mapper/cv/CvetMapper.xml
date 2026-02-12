@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.cvet.CvetMapper">
+
+    <sql id="cvetColumns">
+        POLICY_NO as policyNo,
+        COVERAGE_NO as coverageNo,
+        ET_TSO as etTso,
+        ET_FACE_AMT as etFaceAmt,
+        ET_EFFECT_DATE as etEffectDate,
+        ET_EXPIRED_DATE as etExpiredDate,
+        ET_PUA_VALUE as etPuaValue,
+        ET_PUA_DATE as etPuaDate,
+        ET_LOAN_AMT as etLoanAmt,
+        ET_APL_AMT as etAplAmt,
+        ET_DISAB_BENEF as etDisabBenef,
+        POLICY_TYPE as policyType
+    </sql>
+
+    <select id="findByPolicyAndCoverage" resultType="com.vlife.cv.cvet.ExtendedTermPolicy">
+        SELECT <include refid="cvetColumns"/>
+        FROM CV.CVET
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </select>
+
+    <select id="countByPolicyNo" resultType="int">
+        SELECT COUNT(1)
+        FROM CV.CVET
+        WHERE POLICY_NO = #{policyNo}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO CV.CVET (
+            POLICY_NO, COVERAGE_NO, ET_TSO, ET_FACE_AMT,
+            ET_EFFECT_DATE, ET_EXPIRED_DATE, ET_PUA_VALUE, ET_PUA_DATE,
+            ET_LOAN_AMT, ET_APL_AMT, ET_DISAB_BENEF, POLICY_TYPE
+        ) VALUES (
+            #{cvet.policyNo}, #{cvet.coverageNo}, #{cvet.etTso}, #{cvet.etFaceAmt},
+            #{cvet.etEffectDate}, #{cvet.etExpiredDate}, #{cvet.etPuaValue}, #{cvet.etPuaDate},
+            #{cvet.etLoanAmt}, #{cvet.etAplAmt}, #{cvet.etDisabBenef}, #{cvet.policyType}
+        )
+    </insert>
+
+    <delete id="deleteByPolicyAndCoverage">
+        DELETE FROM CV.CVET
+        WHERE POLICY_NO = #{policyNo}
+          AND COVERAGE_NO = #{coverageNo}
+    </delete>
+
+</mapper>

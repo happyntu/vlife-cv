@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.vlife.cv.psbt.PsbtMapper">
+
+    <sql id="psbtColumns">
+        PLAN_CODE as planCode,
+        VERSION as version,
+        RATE_SEX as rateSex,
+        PSBT_TYPE as psbtType,
+        PSBT_CODE as psbtCode,
+        PSBT_KEY1 as psbtKey1,
+        PSBT_KEY2 as psbtKey2,
+        PSBT_KEY3 as psbtKey3,
+        PSBT_KEY4 as psbtKey4,
+        PSBT_VALUE as psbtValue
+    </sql>
+
+    <!--
+        f99_get_psbt: 範圍匹配查詢
+        
+        查詢邏輯：
+        - plan_code, version, rate_sex, psbt_type, psbt_code 必須完全匹配
+        - psbt_key1 <= key1 <= psbt_key2（範圍鍵1 包含查詢）
+        - psbt_key3 <= key2 <= psbt_key4（範圍鍵2 包含查詢）
+    -->
+    <select id="findByKeysAndRange" resultType="com.vlife.cv.psbt.Psbt">
+        SELECT <include refid="psbtColumns"/>
+        FROM CV.PSBT
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND RATE_SEX = #{rateSex}
+          AND PSBT_TYPE = #{psbtType}
+          AND PSBT_CODE = #{psbtCode}
+          AND PSBT_KEY1 &lt;= #{key1}
+          AND PSBT_KEY2 &gt;= #{key1}
+          AND PSBT_KEY3 &lt;= #{key2}
+          AND PSBT_KEY4 &gt;= #{key2}
+    </select>
+
+    <!--
+        查詢指定組合的所有記錄（供快取預載使用）
+        
+        排序：按 PSBT_KEY1, PSBT_KEY3 排序，便於應用層進行範圍匹配
+    -->
+    <select id="findAllByKeys" resultType="com.vlife.cv.psbt.Psbt">
+        SELECT <include refid="psbtColumns"/>
+        FROM CV.PSBT
+        WHERE PLAN_CODE = #{planCode}
+          AND VERSION = #{version}
+          AND RATE_SEX = #{rateSex}
+          AND PSBT_TYPE = #{psbtType}
+          AND PSBT_CODE = #{psbtCode}
+        ORDER BY PSBT_KEY1, PSBT_KEY3
+    </select>
+
+</mapper>

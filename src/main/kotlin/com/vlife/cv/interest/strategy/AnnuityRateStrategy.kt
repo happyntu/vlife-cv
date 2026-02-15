@@ -2,6 +2,7 @@ package com.vlife.cv.interest.strategy
 
 import com.vlife.common.util.DateUtils
 import com.vlife.common.util.MathUtils
+import com.vlife.common.util.PolicyDateUtils
 import com.vlife.cv.interest.InterestRateCalculationResult
 import com.vlife.cv.interest.InterestRateConstants
 import com.vlife.cv.interest.InterestRateInput
@@ -9,6 +10,7 @@ import com.vlife.cv.interest.MonthlyRateDetail
 import com.vlife.cv.interest.RateType
 import com.vlife.cv.interest.helper.InterestCalcHelper
 import com.vlife.cv.interest.helper.QiratRateLookup
+import com.vlife.cv.interest.helper.QiratRateLookup.RateLookupResult
 import com.vlife.cv.plnd.PlndService
 import com.vlife.cv.plan.Pldf
 import com.vlife.cv.plan.PlanNote
@@ -17,6 +19,7 @@ import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.LocalDate
 
 private val logger = KotlinLogging.logger {}
 
@@ -130,6 +133,53 @@ class AnnuityRateStrategy(
     }
 
     /**
+     * 查詢企業年金參數（P0-001: PLND/QMFDE）
+     *
+     * 用於 insurance_type_3 IN ('G', 'H') 的企業年金產品，查詢：
+     * - intApplyYrInd: 宣告利率適用年限指標
+     * - intApplyYr: 宣告利率適用年數
+     * - issueRate: 保單發行日利率
+     *
+     * V3 參考：pk_cv_cv210p.pck lines 1747-1760
+     *
+     * @param plan 險種定義
+     * @param input 利率計算輸入
+     * @param beginDate 計算起始日
+     * @return Triple(intApplyYrInd, intApplyYr, issueRate) or null if query fails
+     */
+    private fun queryEnterpriseAnnuityParams(
+        plan: Pldf,
+        input: InterestRateInput,
+        beginDate: LocalDate
+    ): Triple<String, Int, BigDecimal>? {
+        try {
+            val plndList = plndService.findByPlanCodeAndVersion(plan.planCode, plan.version)
+            if (plndList.isEmpty()) {
+                logger.debug { "No PLND found for planCode=${plan.planCode}, version=${plan.version}" }
+                return null
+            }
+
+            val qmfdeDto = qmfdeService.getByTargetCode(plndList.first().ivTargetCode)
+            if (qmfdeDto == null) {
+                logger.debug { "No QMFDE found for ivTargetCode=${plndList.first().ivTargetCode}" }
+                return null
+            }
+
+            // Query issue date rate (if needed)
+            val issueRateLookup = qiratRateLookup.lookupRate(input, "5", beginDate)
+
+            return Triple(
+                qmfdeDto.intApplyYrInd ?: "0",
+                qmfdeDto.intApplyYr ?: 0,
+                issueRateLookup.adjustedRate
+            )
+        } catch (e: Exception) {
+            logger.debug { "Error querying PLND/QMFDE: ${e.message}" }
+            return null
+        }
+    }
+
+    /**
      * 複利計算（rate_type='F'）
      *
      * V3 對應：cv210p_rate_calc_G with POWER 公式（lines 1845-1863）
@@ -147,32 +197,13 @@ class AnnuityRateStrategy(
         val endDate = input.endDate!!
 
         // Step 0: P0-001 PLND/QMFDE 查詢（企業年金險種）
-        val insuranceType3 = plan?.insuranceType3
-        val (intApplyYrInd, intApplyYr, rateG) = if (insuranceType3 in listOf("G", "H")) {
-            try {
-                val plndList = plndService.findByPlanCodeAndVersion(plan!!.planCode, plan.version)
-                if (plndList.isEmpty()) {
-                    logger.debug { "No PLND found for planCode=${plan.planCode}, version=${plan.version}" }
-                    return InterestRateCalculationResult.zero()
-                }
-
-                val qmfdeDto = qmfdeService.getByTargetCode(plndList.first().ivTargetCode)
-                    ?: run {
-                        logger.debug { "No QMFDE found for ivTargetCode=${plndList.first().ivTargetCode}" }
-                        return InterestRateCalculationResult.zero()
-                    }
-
-                // Query issue date rate (if needed)
-                val issueRateLookup = qiratRateLookup.lookupRate(input, "5", beginDate)
-
-                Triple(qmfdeDto.intApplyYrInd ?: "0", qmfdeDto.intApplyYr ?: 0, issueRateLookup.adjustedRate)
-            } catch (e: Exception) {
-                logger.debug { "Error querying PLND/QMFDE: ${e.message}" }
-                return InterestRateCalculationResult.zero()
-            }
+        val params = if (plan?.insuranceType3 in listOf("G", "H")) {
+            queryEnterpriseAnnuityParams(plan!!, input, beginDate)
+                ?: return InterestRateCalculationResult.zero()
         } else {
             Triple("0", 0, BigDecimal.ZERO)
         }
+        val (intApplyYrInd, intApplyYr, issueRate) = params
 
         // Step 1: 計算年天數（考慮閏年）
         val yearDays = interestCalcHelper.calculateYearDays(beginDate)
@@ -217,9 +248,31 @@ class AnnuityRateStrategy(
                 currentAnniversaryDate = nextAnniversaryDate
             }
 
-            // P0-002: 查詢該月利率，使用保單週年日而非月初日期（V3 line 1800）
-            // int_rate_type='5'（投資型/宣告利率）
-            val rateLookup = qiratRateLookup.lookupRate(input, "5", currentAnniversaryDate)
+            // P0-001/P0-002: 根據 intApplyYrInd 決定使用發行日利率或查詢當前利率
+            // V3 參考：pk_cv_cv210p.pck lines 1794-1815
+            val rateLookup = when (intApplyYrInd) {
+                "0" -> {
+                    // 不使用發行日利率，直接查詢 QIRAT
+                    qiratRateLookup.lookupRate(input, "5", currentAnniversaryDate)
+                }
+                "A", "B" -> {
+                    // 前 N 年使用發行日利率
+                    val policyYearInfo = PolicyDateUtils.policyYear(poIssueDate, currentDate)
+                    if (policyYearInfo.year <= intApplyYr) {
+                        // 當前保單年度 <= intApplyYr，使用發行日利率
+                        logger.debug { "Policy year ${policyYearInfo.year} <= $intApplyYr, using issue rate $issueRate" }
+                        RateLookupResult(issueRate, issueRate)
+                    } else {
+                        // 超過 intApplyYr，查詢當前利率
+                        logger.debug { "Policy year ${policyYearInfo.year} > $intApplyYr, querying current rate" }
+                        qiratRateLookup.lookupRate(input, "5", currentAnniversaryDate)
+                    }
+                }
+                else -> {
+                    // 其他情況，查詢 QIRAT
+                    qiratRateLookup.lookupRate(input, "5", currentAnniversaryDate)
+                }
+            }
             val originalRate = rateLookup.originalRate
             val adjustedRate = rateLookup.adjustedRate
 

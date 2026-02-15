@@ -1,0 +1,56 @@
+# Test Profile 配置
+# 用途：修復整合測試 Oracle DB 連線失敗問題（ADR-028）
+
+spring:
+  # 排除資料庫相關 Auto-Configuration（Spring Boot 4.x）
+  autoconfigure:
+    exclude:
+      # DataSource Auto-Configuration（Spring Boot 4.x 新路徑）
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.jdbc.autoconfigure.health.DataSourceHealthContributorAutoConfiguration
+
+      # Flyway Auto-Configuration（Spring Boot 4.x 新路徑）
+      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
+
+      # MyBatis Auto-Configuration
+      - org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration
+
+  # 排除包含資料庫依賴的實作類別
+  main:
+    allow-bean-definition-overriding: true  # 允許測試覆蓋 Bean
+
+  # JPA 配置（如果有使用 JPA）
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+
+# Actuator 健康檢查配置
+management:
+  health:
+    db:
+      enabled: false  # 禁用資料庫健康檢查
+
+# Logging 配置（減少測試輸出）
+logging:
+  level:
+    root: WARN
+    com.vlife: INFO
+    org.springframework.web: INFO
+    org.springframework.boot.test: INFO
+
+# 註解：TestContainers Oracle 配置（未來啟用）
+# 當需要真實資料庫整合測試時，取消註解以下配置並新增 TestContainers 依賴
+#
+# spring:
+#   datasource:
+#     url: jdbc:tc:oracle:thin:@/testdb
+#     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+#     username: test
+#     password: test
+#
+# testcontainers:
+#   oracle:
+#     docker:
+#       image-name: gvenzl/oracle-xe:21-slim

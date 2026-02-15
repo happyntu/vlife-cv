@@ -2,6 +2,7 @@ package com.vlife.cv
 
 import org.apache.ibatis.session.SqlSessionFactory
 import org.mybatis.spring.SqlSessionFactoryBean
+import org.apache.ibatis.annotations.Mapper
 import org.mybatis.spring.annotation.MapperScan
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
@@ -15,7 +16,7 @@ import javax.sql.DataSource
  * 提供測試所需的最小 Bean 配置
  */
 @TestConfiguration
-@MapperScan("com.vlife.cv")
+@MapperScan("com.vlife.cv", annotationClass = Mapper::class)
 class TestConfiguration {
 
     /**

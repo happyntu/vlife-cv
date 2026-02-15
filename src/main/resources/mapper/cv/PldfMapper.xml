@@ -16,7 +16,7 @@
     - PK_LIB_PLANPROC.F99_UPDATE_PLAN → update
     - PK_LIB_PLANPROC.F99_DELETE_PLDF → deleteByPlanCodeAndVersion
 
-    Oracle 表格：V3.PLDF (140+ 欄位，本 Mapper 映射常用欄位)
+    Oracle 表格：CV.PLDF (140+ 欄位，本 Mapper 映射常用欄位)
 -->
 <mapper namespace="com.vlife.cv.plan.PldfMapper">
 
@@ -179,7 +179,7 @@
     <!-- 依主鍵查詢 -->
     <select id="findByPlanCodeAndVersion" resultMap="PldfResultMap">
         SELECT <include refid="baseColumns"/>
-        FROM V3.PLDF
+        FROM CV.PLDF
         WHERE PLAN_CODE = #{planCode}
           AND VERSION = #{version}
     </select>
@@ -187,7 +187,7 @@
     <!-- 依險種代碼查詢所有版本 -->
     <select id="findByPlanCode" resultMap="PldfResultMap">
         SELECT <include refid="baseColumns"/>
-        FROM V3.PLDF
+        FROM CV.PLDF
         WHERE PLAN_CODE = #{planCode}
         ORDER BY VERSION
     </select>
@@ -195,7 +195,7 @@
     <!-- 查詢有效險種 -->
     <select id="findEffective" resultMap="PldfResultMap">
         SELECT <include refid="baseColumns"/>
-        FROM V3.PLDF
+        FROM CV.PLDF
         WHERE #{effectiveDate} BETWEEN PLAN_START_DATE AND PLAN_END_DATE
         ORDER BY PLAN_CODE, VERSION
     </select>
@@ -203,7 +203,7 @@
     <!-- 查詢有效險種 (摘要) -->
     <select id="findEffectiveSummary" resultMap="PldfSummaryResultMap">
         SELECT <include refid="summaryColumns"/>
-        FROM V3.PLDF
+        FROM CV.PLDF
         WHERE #{effectiveDate} BETWEEN PLAN_START_DATE AND PLAN_END_DATE
         ORDER BY PLAN_CODE, VERSION
     </select>
@@ -211,7 +211,7 @@
     <!-- 多條件搜尋 (對應 V3 cv001m_sql_statement 動態 SQL) -->
     <select id="search" resultMap="PldfResultMap">
         SELECT <include refid="baseColumns"/>
-        FROM V3.PLDF
+        FROM CV.PLDF
         <where>
             <if test="planCode != null and planCode != ''">
                 AND PLAN_CODE LIKE '%' || #{planCode} || '%'
@@ -247,7 +247,7 @@
     <!-- 多條件搜尋 (摘要) -->
     <select id="searchSummary" resultMap="PldfSummaryResultMap">
         SELECT <include refid="summaryColumns"/>
-        FROM V3.PLDF
+        FROM CV.PLDF
         <where>
             <if test="planCode != null and planCode != ''">
                 AND PLAN_CODE LIKE '%' || #{planCode} || '%'
@@ -274,14 +274,14 @@
     <!-- 查詢所有不重複的險種代碼 -->
     <select id="findAllPlanCodes" resultType="String">
         SELECT DISTINCT PLAN_CODE
-        FROM V3.PLDF
+        FROM CV.PLDF
         ORDER BY PLAN_CODE
     </select>
 
     <!-- 查詢所有不重複的保險型態3 -->
     <select id="findAllInsuranceType3" resultType="String">
         SELECT DISTINCT INSURANCE_TYPE_3
-        FROM V3.PLDF
+        FROM CV.PLDF
         WHERE INSURANCE_TYPE_3 IS NOT NULL
         ORDER BY INSURANCE_TYPE_3
     </select>
@@ -289,14 +289,14 @@
     <!-- 計算險種代碼的版本數量 -->
     <select id="countByPlanCode" resultType="int">
         SELECT COUNT(*)
-        FROM V3.PLDF
+        FROM CV.PLDF
         WHERE PLAN_CODE = #{planCode}
     </select>
 
     <!-- 檢查主鍵是否存在 -->
     <select id="existsByPlanCodeAndVersion" resultType="int">
         SELECT CASE WHEN EXISTS (
-            SELECT 1 FROM V3.PLDF
+            SELECT 1 FROM CV.PLDF
             WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
         ) THEN 1 ELSE 0 END
         FROM DUAL
@@ -306,7 +306,7 @@
 
     <!-- 新增險種描述 -->
     <insert id="insert" parameterType="com.vlife.cv.plan.Pldf">
-        INSERT INTO V3.PLDF (
+        INSERT INTO CV.PLDF (
             PLAN_CODE, VERSION, PLAN_TITLE, PLAN_NAME, CONTRACTED_NAME,
             LOW_AGE, HIGH_AGE, LOW_AGE_IND, HIGH_AGE_IND,
             COLLECT_YEAR_IND, COLLECT_YEAR, EXP_YEAR_IND, EXP_YEAR,
@@ -319,23 +319,23 @@
             UW_PLAN_CODE, UW_VERSION, PC_PLAN_CODE, PC_VERSION,
             ANNY_SW, PREM_LACK_IND, PERSIST_REWARD_IND, PERSIST_PREM_VAL
         ) VALUES (
-            #{planCode}, #{version}, #{planTitle}, #{planName}, #{contractedName},
-            #{lowAge}, #{highAge}, #{lowAgeInd}, #{highAgeInd},
-            #{collectYearInd}, #{collectYear}, #{expYearInd}, #{expYear},
+            #{planCode}, #{version}, #{planTitle,jdbcType=VARCHAR}, #{planName,jdbcType=VARCHAR}, #{contractedName,jdbcType=VARCHAR},
+            #{lowAge}, #{highAge}, #{lowAgeInd,jdbcType=VARCHAR}, #{highAgeInd,jdbcType=VARCHAR},
+            #{collectYearInd}, #{collectYear,jdbcType=NUMERIC}, #{expYearInd}, #{expYear,jdbcType=NUMERIC},
             #{planStartDate}, #{planEndDate},
-            #{primaryRiderInd}, #{insuranceType}, #{insuranceType3}, #{planType},
+            #{primaryRiderInd,jdbcType=VARCHAR}, #{insuranceType,jdbcType=VARCHAR}, #{insuranceType3,jdbcType=VARCHAR}, #{planType,jdbcType=VARCHAR},
             #{currency1}, #{planAccountInd},
-            #{divType}, #{divSwM},
+            #{divType,jdbcType=VARCHAR}, #{divSwM},
             #{csvCalcType}, #{puaCalcType}, #{eteCalcType},
-            #{loanAvalInd}, #{commClassCode}, #{commClassCodeI},
-            #{uwPlanCode}, #{uwVersion}, #{pcPlanCode}, #{pcVersion},
+            #{loanAvalInd,jdbcType=VARCHAR}, #{commClassCode,jdbcType=VARCHAR}, #{commClassCodeI,jdbcType=VARCHAR},
+            #{uwPlanCode}, #{uwVersion}, #{pcPlanCode,jdbcType=VARCHAR}, #{pcVersion,jdbcType=VARCHAR},
             #{annySw}, #{premLackInd}, #{persistRewardInd}, #{persistPremVal}
         )
     </insert>
 
     <!-- 更新險種描述 -->
     <update id="update">
-        UPDATE V3.PLDF
+        UPDATE CV.PLDF
         <set>
             <if test="request.planTitle != null">PLAN_TITLE = #{request.planTitle},</if>
             <if test="request.planName != null">PLAN_NAME = #{request.planName},</if>
@@ -364,7 +364,7 @@
 
     <!-- 刪除險種描述 -->
     <delete id="deleteByPlanCodeAndVersion">
-        DELETE FROM V3.PLDF
+        DELETE FROM CV.PLDF
         WHERE PLAN_CODE = #{planCode} AND VERSION = #{version}
     </delete>
 

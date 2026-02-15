@@ -167,7 +167,7 @@
             #{commClassCode},
             #{commLineCode},
             #{cratType},
-            #{projectNo},
+            #{projectNo,jdbcType=VARCHAR},
             #{startDate},
             #{endDate},
             #{cratKey1},
@@ -176,12 +176,12 @@
             #{commEndYear},
             #{commStartAge},
             #{commEndAge},
-            #{commStartModx},
-            #{commEndModx},
+            #{commStartModx,jdbcType=NUMERIC},
+            #{commEndModx,jdbcType=NUMERIC},
             #{commRate},
             #{commRateOrg},
-            #{premLimitStart},
-            #{premLimitEnd}
+            #{premLimitStart,jdbcType=DECIMAL},
+            #{premLimitEnd,jdbcType=DECIMAL}
         )
     </insert>
 

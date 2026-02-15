@@ -222,7 +222,10 @@ class CratMapperIntegrationTest {
             assertNotNull(inserted)
             assertEquals("TEST1", inserted.commClassCode)
             assertEquals("31", inserted.commLineCode)
-            assertEquals(BigDecimal("0.050000"), inserted.commRate)
+            assertTrue(
+                BigDecimal("0.05").compareTo(inserted.commRate) == 0,
+                "Expected commRate ≈ 0.05 but got ${inserted.commRate}"
+            )
             println("✓ insert: 成功新增佣金率 serial=$serial")
         }
     }
@@ -251,7 +254,10 @@ class CratMapperIntegrationTest {
             // Verify updated data
             val updated = cratMapper.findBySerial(100L)
             assertNotNull(updated)
-            assertEquals(BigDecimal("0.080000"), updated.commRate)
+            assertTrue(
+                BigDecimal("0.08").compareTo(updated.commRate) == 0,
+                "Expected commRate ≈ 0.08 but got ${updated.commRate}"
+            )
             assertEquals(1, updated.commStartYear)
             assertEquals(10, updated.commEndYear)
             println("✓ update: 成功更新佣金率 serial=100")

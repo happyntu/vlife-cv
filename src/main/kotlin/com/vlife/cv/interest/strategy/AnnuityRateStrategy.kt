@@ -163,8 +163,7 @@ class AnnuityRateStrategy(
                     }
 
                 // Query issue date rate (if needed)
-                val issueDate = input.beginDate!!
-                val issueRateLookup = qiratRateLookup.lookupRate(input, "5", issueDate)
+                val issueRateLookup = qiratRateLookup.lookupRate(input, "5", beginDate)
 
                 Triple(qmfdeDto.intApplyYrInd ?: "0", qmfdeDto.intApplyYr ?: 0, issueRateLookup.adjustedRate)
             } catch (e: Exception) {
@@ -185,7 +184,12 @@ class AnnuityRateStrategy(
             months += 1  // V3 lines 1727-1729
         }
 
-        // Step 3: 逐月查詢利率並計算複利因子（逐月累乘）
+        // Step 3: P0-003 計算第一個保單週年日（用於費率查詢）
+        // V3 使用保單週年日查詢費率，而非月初日期（V3 lines 1747-1760）
+        val poIssueDate = input.poIssueDate ?: beginDate  // fallback if not provided
+        var currentAnniversaryDate = calculateFirstAnniversary(beginDate, poIssueDate)
+
+        // Step 4: 逐月查詢利率並計算複利因子（逐月累乘）
         // var 使用理由：複利計算需要累乘 rate_factor（遵循 V3 邏輯）
         var cumulativeRateFactor = BigDecimal.ONE  // 複利累積因子（BigDecimal 精確計算）
         var totalRateWeighted = BigDecimal.ZERO
@@ -195,9 +199,6 @@ class AnnuityRateStrategy(
         val monthlyDetails = mutableListOf<MonthlyRateDetail>()
 
         for (i in 1..months) {
-            // 調整至月初（用於 QIRAT 查詢）
-            val monthStartDate = DateUtils.withDay(currentDate, 1) ?: currentDate
-
             // 下個月的起始日
             val nextMonthDate = DateUtils.addMonths(currentDate, 1) ?: currentDate
 
@@ -210,8 +211,15 @@ class AnnuityRateStrategy(
             // P1-004: 每次迭代重算年天數（處理跨閏年）
             val currentYearDays = interestCalcHelper.calculateYearDays(currentDate)
 
-            // 查詢該月利率（int_rate_type='5'，投資型/宣告利率，V3 line 1800）
-            val rateLookup = qiratRateLookup.lookupRate(input, "5", monthStartDate)
+            // P0-002: 如果當前月份跨越下一個保單週年日，則更新查詢日期
+            val nextAnniversaryDate = DateUtils.addYears(currentAnniversaryDate, 1) ?: currentAnniversaryDate
+            if (monthEndDate >= nextAnniversaryDate) {
+                currentAnniversaryDate = nextAnniversaryDate
+            }
+
+            // P0-002: 查詢該月利率，使用保單週年日而非月初日期（V3 line 1800）
+            // int_rate_type='5'（投資型/宣告利率）
+            val rateLookup = qiratRateLookup.lookupRate(input, "5", currentAnniversaryDate)
             val originalRate = rateLookup.originalRate
             val adjustedRate = rateLookup.adjustedRate
 
@@ -252,14 +260,14 @@ class AnnuityRateStrategy(
             currentDate = nextMonthDate
         }
 
-        // Step 4: 計算複利利息（最後 ROUND，V3 lines 1862-1863）
+        // Step 5: 計算複利利息（最後 ROUND，V3 lines 1862-1863）
         // 利息 = ROUND(本金 × (累積 rate_factor - 1), precision)
         val totalIntAmt = MathUtils.round(
             input.principalAmt.multiply(cumulativeRateFactor.subtract(BigDecimal.ONE)),
             precision
         )
 
-        // Step 5: 計算日加權平均利率
+        // Step 6: 計算日加權平均利率（已棄用，僅保留供參考）
         val averageRate = if (totalDays > 0) {
             totalRateWeighted.divide(
                 BigDecimal(totalDays),

@@ -110,5 +110,16 @@ data class InterestRateInput(
      *
      * 投資型保單的目標代碼（Design Spec §2.3 第 10 個欄位）
      */
-    val ivTargetCode: String? = null
+    val ivTargetCode: String? = null,
+
+    /**
+     * 保單發行日（P0-002/P0-003: 用於計算保單週年日）
+     * V4 新增欄位（V3 無此欄位，AnnuityRateStrategy 需要）
+     *
+     * 用於 P0-002: 查詢費率時使用保單週年日而非月初日期
+     * 用於 P0-003: calculateFirstAnniversary() 計算第一個保單週年日
+     *
+     * 若未提供，fallback 為 beginDate（向下相容）
+     */
+    val poIssueDate: LocalDate? = null
 )

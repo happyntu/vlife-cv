@@ -4,7 +4,7 @@ import com.vlife.cv.interest.InterestRateInput
 import com.vlife.cv.interest.RateType
 import com.vlife.cv.interest.helper.InterestCalcHelper
 import com.vlife.cv.interest.helper.QiratRateLookup
-import com.vlife.cv.interest.helper.RateLookupResult
+import com.vlife.cv.interest.helper.QiratRateLookup.RateLookupResult
 import com.vlife.cv.plan.Pldf
 import io.mockk.every
 import io.mockk.mockk

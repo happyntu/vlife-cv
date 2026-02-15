@@ -4,7 +4,7 @@ import com.vlife.cv.interest.InterestRateInput
 import com.vlife.cv.interest.RateType
 import com.vlife.cv.interest.helper.InterestCalcHelper
 import com.vlife.cv.interest.helper.QiratRateLookup
-import com.vlife.cv.interest.helper.RateLookupResult
+import com.vlife.cv.interest.helper.QiratRateLookup.RateLookupResult
 import com.vlife.cv.plan.PlanNote
 import io.mockk.every
 import io.mockk.mockk
@@ -39,6 +39,8 @@ class FreeLookRateStrategyTest {
         qiratRateLookup = mockk()
         interestCalcHelper = mockk()
         strategy = FreeLookRateStrategy(qiratRateLookup, interestCalcHelper)
+        // P0-006: FreeLookRateStrategy 使用 toMonthStart 查詢固定日期
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
     }
 
     @Test
@@ -252,9 +254,9 @@ class FreeLookRateStrategyTest {
 
         // Then
         assertNotNull(result)
-        assertEquals(BigDecimal("250"), result.actualRate)  // 日加權平均 = 250
+        assertEquals(0, BigDecimal("250").compareTo(result.actualRate))  // 日加權平均 = 250
         assertTrue(result.intAmt > BigDecimal.ZERO)  // 應有利息
-        assertEquals(1, result.monthlyDetails.size)
+        assertEquals(2, result.monthlyDetails.size)  // P0-005: months += 1，故 monthlyDetails = 2
     }
 
     @Test
@@ -285,9 +287,9 @@ class FreeLookRateStrategyTest {
 
         // Then
         assertNotNull(result)
-        assertEquals(BigDecimal("250"), result.actualRate)  // 利率相同，日加權平均 = 250
+        assertEquals(0, BigDecimal("250").compareTo(result.actualRate))  // 利率相同，日加權平均 = 250
         assertTrue(result.intAmt > BigDecimal.ZERO)
-        assertEquals(3, result.monthlyDetails.size)
+        assertEquals(4, result.monthlyDetails.size)  // P0-005: months += 1，故 monthlyDetails = 4
     }
 
     @Test
@@ -366,6 +368,7 @@ class FreeLookRateStrategyTest {
         every { interestCalcHelper.calculateMonths(any(), any()) } returns 0  // 同月份
         every { interestCalcHelper.calculateDays(any(), any()) } returns 5
         every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
 
         val rateLookupResult = RateLookupResult(
             originalRate = BigDecimal("250"),
@@ -378,5 +381,129 @@ class FreeLookRateStrategyTest {
 
         // Then
         assertEquals(1, result.monthlyDetails.size)  // 月數 0 時應加 1
+    }
+
+    // =========================================================================
+    // P0/P1 修復驗證測試
+    // =========================================================================
+
+    @Test
+    fun `P0-005 should unconditionally add 1 to months`() {
+        // P0-005: V3 fc0 line 399 無條件 +1（非有條件）
+        // months=3 → 應得 4 個月明細
+        val input = InterestRateInput(
+            rateType = RateType.FREE_LOOK_A,
+            beginDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 3, 31),
+            principalAmt = BigDecimal("1000000"),
+            subAcntPlanCode = "TEST"
+        )
+
+        every { interestCalcHelper.calculateYearDays(any()) } returns 365
+        every { interestCalcHelper.calculateMonths(any(), any()) } returns 3
+        every { interestCalcHelper.calculateDays(any(), any()) } returns 30
+        every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
+
+        val rateLookupResult = RateLookupResult(
+            originalRate = BigDecimal("250"),
+            adjustedRate = BigDecimal("250")
+        )
+        every { qiratRateLookup.lookupRate(any(), "1", any()) } returns rateLookupResult
+
+        val result = strategy.calculate(input, precision = 0)
+
+        // P0-005: months=3 無條件 +1 → 4 個月明細
+        assertEquals(4, result.monthlyDetails.size)
+    }
+
+    @Test
+    fun `P0-006 should use fixed beginDate for QIRAT query`() {
+        // P0-006: V3 fc0 使用固定 begin_date 查詢 QIRAT（非逐月查詢）
+        val input = InterestRateInput(
+            rateType = RateType.FREE_LOOK_A,
+            beginDate = LocalDate.of(2024, 1, 15),
+            endDate = LocalDate.of(2024, 3, 31),
+            principalAmt = BigDecimal("1000000"),
+            subAcntPlanCode = "TEST"
+        )
+
+        every { interestCalcHelper.calculateYearDays(any()) } returns 365
+        every { interestCalcHelper.calculateMonths(any(), any()) } returns 2
+        every { interestCalcHelper.calculateDays(any(), any()) } returns 30
+        every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
+
+        val rateLookupResult = RateLookupResult(
+            originalRate = BigDecimal("250"),
+            adjustedRate = BigDecimal("250")
+        )
+        every { qiratRateLookup.lookupRate(any(), "1", any()) } returns rateLookupResult
+
+        strategy.calculate(input, precision = 0)
+
+        // P0-006: QIRAT 應只查詢一次（使用固定 beginDate），非逐月查詢
+        verify(exactly = 1) { qiratRateLookup.lookupRate(any(), "1", any()) }
+    }
+
+    @Test
+    fun `P1-001 should calculate intAmt once at end not monthly`() {
+        // P1-001: intAmt = principal × avgRate × totalDays / yearDays（最後一次計算）
+        val input = InterestRateInput(
+            rateType = RateType.FREE_LOOK_A,
+            beginDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 1, 31),
+            principalAmt = BigDecimal("1000000"),
+            subAcntPlanCode = "TEST"
+        )
+
+        every { interestCalcHelper.calculateYearDays(any()) } returns 365
+        every { interestCalcHelper.calculateMonths(any(), any()) } returns 0
+        every { interestCalcHelper.calculateDays(any(), any()) } returns 31
+        every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
+
+        val rateLookupResult = RateLookupResult(
+            originalRate = BigDecimal("250"),
+            adjustedRate = BigDecimal("250")
+        )
+        every { qiratRateLookup.lookupRate(any(), "1", any()) } returns rateLookupResult
+
+        val result = strategy.calculate(input, precision = 0)
+
+        // P1-001: intAmt = round(1000000 × 250/10000 × 31/365, 0) = round(2123.28..., 0) = 2123
+        assertEquals(0, BigDecimal("2123").compareTo(result.intAmt)) {
+            "P1-001: intAmt should be computed once, got: ${result.intAmt}"
+        }
+    }
+
+    @Test
+    fun `P1-005 should return zero when QIRAT not found`() {
+        // P1-005: QIRAT 查無結果時立即返回 zero
+        val input = InterestRateInput(
+            rateType = RateType.FREE_LOOK_A,
+            beginDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 1, 31),
+            principalAmt = BigDecimal("1000000"),
+            subAcntPlanCode = "TEST"
+        )
+
+        every { interestCalcHelper.calculateYearDays(any()) } returns 365
+        every { interestCalcHelper.calculateMonths(any(), any()) } returns 1
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
+
+        // QIRAT 返回零值（未找到）
+        val zeroResult = RateLookupResult(
+            originalRate = BigDecimal.ZERO,
+            adjustedRate = BigDecimal.ZERO
+        )
+        every { qiratRateLookup.lookupRate(any(), "1", any()) } returns zeroResult
+
+        val result = strategy.calculate(input, precision = 0)
+
+        // P1-005: 應立即返回 zero，不進入月迴圈
+        assertEquals(BigDecimal.ZERO, result.actualRate)
+        assertEquals(BigDecimal.ZERO, result.intAmt)
+        assertTrue(result.monthlyDetails.isEmpty())
     }
 }

@@ -4,7 +4,7 @@ import com.vlife.cv.interest.InterestRateInput
 import com.vlife.cv.interest.RateType
 import com.vlife.cv.interest.helper.InterestCalcHelper
 import com.vlife.cv.interest.helper.QiratRateLookup
-import com.vlife.cv.interest.helper.RateLookupResult
+import com.vlife.cv.interest.helper.QiratRateLookup.RateLookupResult
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -109,13 +109,13 @@ class FourBankRateStrategyTest {
 
     @Test
     fun `should use int_rate_type 0 for four bank rate query`() {
-        // Given
+        // Given - actualRate=0 觸發 QIRAT 查詢路徑（P1-002: actualRate!=0 時直接使用，不查 QIRAT）
         val input = InterestRateInput(
             rateType = RateType.FOUR_BANK_RATE,
             beginDate = LocalDate.of(2024, 1, 1),
             endDate = LocalDate.of(2024, 1, 31),
             principalAmt = BigDecimal("1000000"),
-            actualRate = BigDecimal("200")  // f20 前置利率
+            actualRate = BigDecimal.ZERO  // f20 未設定，觸發 QIRAT 查詢
         )
 
         // Mock dependencies
@@ -125,28 +125,34 @@ class FourBankRateStrategyTest {
         every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
         every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
 
-        val rateLookupResult = RateLookupResult(
+        val f20FallbackResult = RateLookupResult(
+            originalRate = BigDecimal("200"),
+            adjustedRate = BigDecimal("200")
+        )
+        every { qiratRateLookup.lookupRate(any(), "2", any()) } returns f20FallbackResult
+
+        val f40RateLookupResult = RateLookupResult(
             originalRate = BigDecimal("180"),
             adjustedRate = BigDecimal("180")
         )
-        every { qiratRateLookup.lookupRate(any(), "0", any()) } returns rateLookupResult
+        every { qiratRateLookup.lookupRate(any(), "0", any()) } returns f40RateLookupResult
 
         // When
         strategy.calculate(input, precision = 0)
 
-        // Then - 驗證使用 int_rate_type='0'
+        // Then - 驗證使用 int_rate_type='0' 查詢四行庫利率
         verify { qiratRateLookup.lookupRate(any(), "0", any()) }
     }
 
     @Test
     fun `should use f20 rate for interest calculation and f40 rate for actualRate`() {
-        // Given - f20 前置利率 = 200, f40 四行庫利率 = 180
+        // Given - actualRate=0 觸發 fallback：f20 (type='2')=200, f40 (type='0')=180
         val input = InterestRateInput(
             rateType = RateType.FOUR_BANK_RATE,
             beginDate = LocalDate.of(2024, 1, 1),
             endDate = LocalDate.of(2024, 1, 31),
             principalAmt = BigDecimal("1000000"),
-            actualRate = BigDecimal("200")  // f20 前置利率（用於 intAmt 計算）
+            actualRate = BigDecimal.ZERO  // f20 未設定，觸發 QIRAT fallback
         )
 
         // Mock dependencies
@@ -156,8 +162,14 @@ class FourBankRateStrategyTest {
         every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
         every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
 
+        val f20FallbackResult = RateLookupResult(
+            originalRate = BigDecimal("200"),  // f20 fallback 利率（type='2'，用於 intAmt 計算）
+            adjustedRate = BigDecimal("200")
+        )
+        every { qiratRateLookup.lookupRate(any(), "2", any()) } returns f20FallbackResult
+
         val f40RateLookupResult = RateLookupResult(
-            originalRate = BigDecimal("180"),  // f40 四行庫利率（用於 actualRate 計算）
+            originalRate = BigDecimal("180"),  // f40 四行庫利率（type='0'，用於 actualRate）
             adjustedRate = BigDecimal("180")
         )
         every { qiratRateLookup.lookupRate(any(), "0", any()) } returns f40RateLookupResult
@@ -167,7 +179,7 @@ class FourBankRateStrategyTest {
 
         // Then
         // actualRate 應為 f40 四行庫利率日加權平均 = 180
-        assertEquals(BigDecimal("180"), result.actualRate)
+        assertEquals(0, BigDecimal("180").compareTo(result.actualRate))
         // intAmt 應使用 f20 利率計算
         assertTrue(result.intAmt > BigDecimal.ZERO)
     }
@@ -275,7 +287,7 @@ class FourBankRateStrategyTest {
 
     @Test
     fun `should calculate correctly with single month`() {
-        // Given
+        // Given - P1-002: actualRate=200 (已知) → 直接使用為四行庫利率
         val input = InterestRateInput(
             rateType = RateType.FOUR_BANK_RATE,
             beginDate = LocalDate.of(2024, 1, 1),
@@ -291,25 +303,19 @@ class FourBankRateStrategyTest {
         every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
         every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
 
-        val rateLookupResult = RateLookupResult(
-            originalRate = BigDecimal("180"),
-            adjustedRate = BigDecimal("180")
-        )
-        every { qiratRateLookup.lookupRate(any(), "0", any()) } returns rateLookupResult
-
         // When
         val result = strategy.calculate(input, precision = 0)
 
-        // Then
+        // Then - P1-002: 已知利率直接使用，actualRate = 200
         assertNotNull(result)
-        assertEquals(BigDecimal("180"), result.actualRate)  // f40 四行庫利率
-        assertTrue(result.intAmt > BigDecimal.ZERO)  // 使用 f20 利率計算
+        assertEquals(0, BigDecimal("200").compareTo(result.actualRate))
+        assertTrue(result.intAmt > BigDecimal.ZERO)
         assertEquals(1, result.monthlyDetails.size)
     }
 
     @Test
     fun `should calculate correctly with multiple months`() {
-        // Given
+        // Given - P1-002: actualRate=200 (已知) → 直接使用為四行庫利率
         val input = InterestRateInput(
             rateType = RateType.FOUR_BANK_RATE,
             beginDate = LocalDate.of(2024, 1, 1),
@@ -329,18 +335,12 @@ class FourBankRateStrategyTest {
         )
         every { interestCalcHelper.formatMonth(any()) } returnsMany listOf("2024/01", "2024/02", "2024/03")
 
-        val rateLookupResult = RateLookupResult(
-            originalRate = BigDecimal("180"),
-            adjustedRate = BigDecimal("180")
-        )
-        every { qiratRateLookup.lookupRate(any(), "0", any()) } returns rateLookupResult
-
         // When
         val result = strategy.calculate(input, precision = 0)
 
-        // Then
+        // Then - P1-002: 已知利率直接使用，actualRate = 200
         assertNotNull(result)
-        assertEquals(BigDecimal("180"), result.actualRate)  // 利率相同，日加權平均 = 180
+        assertEquals(0, BigDecimal("200").compareTo(result.actualRate))
         assertTrue(result.intAmt > BigDecimal.ZERO)
         assertEquals(3, result.monthlyDetails.size)
     }
@@ -405,5 +405,73 @@ class FourBankRateStrategyTest {
 
         // Then
         assertEquals(2, result.intAmt.scale())  // 外幣精度 2
+    }
+
+    // =========================================================================
+    // P1-002 修復驗證測試
+    // =========================================================================
+
+    @Test
+    fun `P1-002 should use known actualRate directly without QIRAT query`() {
+        // P1-002: V3 lines 1290-1292：actualRate != 0 時直接使用，不查 QIRAT type='0'
+        val input = InterestRateInput(
+            rateType = RateType.FOUR_BANK_RATE,
+            beginDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 1, 31),
+            principalAmt = BigDecimal("1000000"),
+            actualRate = BigDecimal("200")  // f20 前置利率（已知）
+        )
+
+        every { interestCalcHelper.calculateYearDays(any()) } returns 365
+        every { interestCalcHelper.calculateMonths(any(), any()) } returns 0
+        every { interestCalcHelper.calculateDays(any(), any()) } returns 31
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
+        every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
+
+        val result = strategy.calculate(input, precision = 0)
+
+        // P1-002: actualRate=200 (已知) → 四行庫利率直接使用，不查 QIRAT type='0'
+        verify(exactly = 0) { qiratRateLookup.lookupRate(any(), "0", any()) }
+        // actualRate 為日加權平均 = 200（已知利率直接作為四行庫利率）
+        assertEquals(0, BigDecimal("200").compareTo(result.actualRate)) {
+            "P1-002: actualRate should be 200 (direct use), got: ${result.actualRate}"
+        }
+    }
+
+    @Test
+    fun `P1-002 should query QIRAT when actualRate is zero`() {
+        // P1-002: V3 lines 1295-1330：actualRate = 0 時查詢 QIRAT type='0'
+        val input = InterestRateInput(
+            rateType = RateType.FOUR_BANK_RATE,
+            beginDate = LocalDate.of(2024, 1, 1),
+            endDate = LocalDate.of(2024, 1, 31),
+            principalAmt = BigDecimal("1000000"),
+            actualRate = BigDecimal.ZERO  // f20 未設定
+        )
+
+        every { interestCalcHelper.calculateYearDays(any()) } returns 365
+        every { interestCalcHelper.calculateMonths(any(), any()) } returns 0
+        every { interestCalcHelper.calculateDays(any(), any()) } returns 31
+        every { interestCalcHelper.toMonthStart(any()) } returns LocalDate.of(2024, 1, 1)
+        every { interestCalcHelper.formatMonth(any()) } returns "2024/01"
+
+        val f20FallbackResult = RateLookupResult(
+            originalRate = BigDecimal("200"),
+            adjustedRate = BigDecimal("200")
+        )
+        val f40Result = RateLookupResult(
+            originalRate = BigDecimal("180"),
+            adjustedRate = BigDecimal("180")
+        )
+        every { qiratRateLookup.lookupRate(any(), "2", any()) } returns f20FallbackResult
+        every { qiratRateLookup.lookupRate(any(), "0", any()) } returns f40Result
+
+        val result = strategy.calculate(input, precision = 0)
+
+        // P1-002: actualRate=0 → 應查詢 QIRAT type='0'
+        verify(atLeast = 1) { qiratRateLookup.lookupRate(any(), "0", any()) }
+        assertEquals(0, BigDecimal("180").compareTo(result.actualRate)) {
+            "P1-002: actualRate should be 180 (from QIRAT), got: ${result.actualRate}"
+        }
     }
 }

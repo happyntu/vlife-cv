@@ -241,7 +241,7 @@ class AnnuityRateStrategy(
             totalRateWeighted = totalRateWeighted.add(adjustedRate.multiply(BigDecimal(days)))
             totalDays += days
 
-            // 記錄月份明細
+            // 記錄月份明細（P1-006: 儲存 rateFactor 供差額式計算使用）
             monthlyDetails.add(
                 MonthlyRateDetail(
                     strDate = currentDate,
@@ -250,9 +250,10 @@ class AnnuityRateStrategy(
                     days = days,
                     iRateOriginal = originalRate,
                     iRate = adjustedRate,
-                    intAmt = BigDecimal.ZERO,  // 複利利息最後計算
+                    intAmt = BigDecimal.ZERO,  // P1-006: 差額式利息稍後計算
                     principalAmt = input.principalAmt,
-                    description = "Compound"
+                    description = "Compound",
+                    rateFactor = rateFactor  // P1-006: 儲存該月份的複利因子
                 )
             )
 
@@ -260,12 +261,32 @@ class AnnuityRateStrategy(
             currentDate = nextMonthDate
         }
 
+        // P1-006: 差額式 intAmt 計算（每月利息 = 累積利息 - 前期累積利息）
+        // 避免單次計算後的總利息與逐月累加不一致（rounding 差異）
+        var accumulatedIntAmt = BigDecimal.ZERO
+        val updatedMonthlyDetails = monthlyDetails.mapIndexed { index, detail ->
+            // 計算截至該月的累積複利因子
+            val cumulativeFactorUpToThisMonth = monthlyDetails.take(index + 1)
+                .fold(BigDecimal.ONE) { acc, d -> acc.multiply(d.rateFactor) }
+                .setScale(POWER_SCALE, RoundingMode.HALF_UP)
+
+            // 計算截至該月的累積利息（ROUND）
+            val cumulativeInterest = MathUtils.round(
+                input.principalAmt.multiply(cumulativeFactorUpToThisMonth.subtract(BigDecimal.ONE)),
+                precision
+            )
+
+            // 該月差額利息 = 當前累積 - 前期累積
+            val monthlyIntAmt = cumulativeInterest.subtract(accumulatedIntAmt)
+            accumulatedIntAmt = cumulativeInterest
+
+            // 更新該月的 intAmt
+            detail.copy(intAmt = monthlyIntAmt)
+        }
+
         // Step 5: 計算複利利息（最後 ROUND，V3 lines 1862-1863）
-        // 利息 = ROUND(本金 × (累積 rate_factor - 1), precision)
-        val totalIntAmt = MathUtils.round(
-            input.principalAmt.multiply(cumulativeRateFactor.subtract(BigDecimal.ONE)),
-            precision
-        )
+        // 使用差額式累積結果（與單次計算可能有微小差異，以差額式為準）
+        val totalIntAmt = accumulatedIntAmt
 
         // Step 6: 計算日加權平均利率（已棄用，僅保留供參考）
         val averageRate = if (totalDays > 0) {
@@ -292,7 +313,7 @@ class AnnuityRateStrategy(
         return InterestRateCalculationResult(
             actualRate = compoundActualRate,
             intAmt = totalIntAmt,
-            monthlyDetails = monthlyDetails
+            monthlyDetails = updatedMonthlyDetails  // P1-006: 使用差額式計算後的月度明細
         )
     }
 

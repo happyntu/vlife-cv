@@ -106,5 +106,16 @@ data class MonthlyRateDetail(
      *
      * 備註說明，用於 Parallel Run 比對（CV210P-R-010）
      */
-    val description: String? = null
+    val description: String? = null,
+
+    /**
+     * 複利因子（P1-006: 用於差額式 intAmt 計算）
+     * V4 新增欄位（V3 無此欄位，AnnuityRateStrategy 複利計算需要）
+     *
+     * rateFactor = POWER(1 + rate/10000, days/yearDays)
+     *
+     * 用途：記錄該月份的複利因子，供後續差額式利息計算使用
+     * 預設值：BigDecimal.ONE（向下相容，線性利率不使用此欄位）
+     */
+    val rateFactor: BigDecimal = BigDecimal.ONE
 )

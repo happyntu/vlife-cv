@@ -1,0 +1,35 @@
+# V3 Comparison Test Profile 配置
+# 用途：Phase 2C V3 vs V4 整合測試
+# 架構：V4 DataSource 由 TestContainers 提供，V3 DataSource 手動配置
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+  # Flyway 配置（使用 TestContainers V4 資料庫）
+  # 使用獨立路徑避免與 vlife-common 的 V1.0.0 migration 衝突
+  flyway:
+    enabled: true
+    locations: classpath:db/migration-v3test
+    baseline-on-migrate: true
+    baseline-version: 0
+
+# Logging 配置
+logging:
+  level:
+    root: WARN
+    com.vlife: INFO
+    com.vlife.cv.interest: DEBUG
+    org.flywaydb: DEBUG
+    org.testcontainers: INFO
+    org.springframework.boot.autoconfigure: DEBUG
+    org.springframework.boot.jdbc: DEBUG
+    org.springframework.boot.flyway: DEBUG
+    org.springframework.jdbc: DEBUG
+    oracle.jdbc: WARN
+
+# Actuator 健康檢查配置
+management:
+  health:
+    db:
+      enabled: false

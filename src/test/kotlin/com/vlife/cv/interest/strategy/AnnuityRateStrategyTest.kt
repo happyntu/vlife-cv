@@ -620,7 +620,8 @@ class AnnuityRateStrategyTest {
             beginDate = LocalDate.of(2024, 1, 1),
             endDate = LocalDate.of(2024, 1, 31),
             principalAmt = BigDecimal("1000000"),
-            poIssueDate = LocalDate.of(2020, 6, 15)
+            poIssueDate = LocalDate.of(2020, 6, 15),
+            subAcntPlanCode = "GANN01"  // P0-001: 必須提供 subAcntPlanCode 供 QIRAT 查詢
         )
 
         every { interestCalcHelper.calculateYearDays(any()) } returns 366
@@ -632,8 +633,9 @@ class AnnuityRateStrategyTest {
         val currentRateLookup = RateLookupResult(BigDecimal("250"), BigDecimal("250"))
 
         // Mock: 發行日查詢返回 300，保單週年日查詢返回 250
-        every { qiratRateLookup.lookupRate(any(), "5", LocalDate.of(2024, 1, 1)) } returns issueRateLookup
-        every { qiratRateLookup.lookupRate(any(), "5", LocalDate.of(2023, 6, 15)) } returns currentRateLookup
+        every { qiratRateLookup.lookupRate(any(), "5", LocalDate.of(2020, 6, 15)) } returns issueRateLookup  // P0-001: 使用 poIssueDate 查詢
+        every { qiratRateLookup.lookupRate(any(), "5", LocalDate.of(2023, 6, 15)) } returns issueRateLookup  // 前 3 年使用發行日利率
+        every { qiratRateLookup.lookupRate(any(), "5", LocalDate.of(2024, 1, 1)) } returns currentRateLookup
 
         val result = strategy.calculate(input, 0, plan, null)
 

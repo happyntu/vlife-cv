@@ -165,8 +165,9 @@ class AnnuityRateStrategy(
                 return null
             }
 
-            // Query issue date rate (if needed)
-            val issueRateLookup = qiratRateLookup.lookupRate(input, "5", beginDate)
+            // Query issue date rate (使用保單發行日查詢)
+            val poIssueDate = input.poIssueDate ?: beginDate  // Fallback if not provided
+            val issueRateLookup = qiratRateLookup.lookupRate(input, "5", poIssueDate)
 
             return Triple(
                 qmfdeDto.intApplyYrInd ?: "0",

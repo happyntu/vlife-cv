@@ -9,8 +9,10 @@ import com.vlife.cv.interest.MonthlyRateDetail
 import com.vlife.cv.interest.RateType
 import com.vlife.cv.interest.helper.InterestCalcHelper
 import com.vlife.cv.interest.helper.QiratRateLookup
+import com.vlife.cv.plnd.PlndService
 import com.vlife.cv.plan.Pldf
 import com.vlife.cv.plan.PlanNote
+import com.vlife.cv.quote.QmfdeService
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.math.BigDecimal
@@ -60,7 +62,9 @@ private const val POWER_SCALE = 20
 @Component
 class AnnuityRateStrategy(
     private val qiratRateLookup: QiratRateLookup,
-    private val interestCalcHelper: InterestCalcHelper
+    private val interestCalcHelper: InterestCalcHelper,
+    private val plndService: PlndService,
+    private val qmfdeService: QmfdeService
 ) : InterestRateStrategy {
 
     override fun supportedRateTypes(): Set<RateType> = setOf(
@@ -86,7 +90,7 @@ class AnnuityRateStrategy(
 
         // 根據 rate_type 選擇計算方式
         return when (input.rateType) {
-            RateType.COMPOUND_RATE -> calculateCompoundInterest(input, precision)  // rate_type 'F'
+            RateType.COMPOUND_RATE -> calculateCompoundInterest(input, precision, plan)  // rate_type 'F'
             RateType.ANNUITY_RATE_D -> calculateLinearInterest(input, precision)   // rate_type 'D'
             else -> {
                 logger.warn { "Unexpected rateType: ${input.rateType}" }
@@ -136,10 +140,40 @@ class AnnuityRateStrategy(
      */
     private fun calculateCompoundInterest(
         input: InterestRateInput,
-        precision: Int
+        precision: Int,
+        plan: Pldf? = null
     ): InterestRateCalculationResult {
         val beginDate = input.beginDate!!
         val endDate = input.endDate!!
+
+        // Step 0: P0-001 PLND/QMFDE 查詢（企業年金險種）
+        val insuranceType3 = plan?.insuranceType3
+        val (intApplyYrInd, intApplyYr, rateG) = if (insuranceType3 in listOf("G", "H")) {
+            try {
+                val plndList = plndService.findByPlanCodeAndVersion(plan!!.planCode, plan.version)
+                if (plndList.isEmpty()) {
+                    logger.debug { "No PLND found for planCode=${plan.planCode}, version=${plan.version}" }
+                    return InterestRateCalculationResult.zero()
+                }
+
+                val qmfdeDto = qmfdeService.getByTargetCode(plndList.first().ivTargetCode)
+                    ?: run {
+                        logger.debug { "No QMFDE found for ivTargetCode=${plndList.first().ivTargetCode}" }
+                        return InterestRateCalculationResult.zero()
+                    }
+
+                // Query issue date rate (if needed)
+                val issueDate = input.beginDate!!
+                val issueRateLookup = qiratRateLookup.lookupRate(input, "5", issueDate)
+
+                Triple(qmfdeDto.intApplyYrInd ?: "0", qmfdeDto.intApplyYr ?: 0, issueRateLookup.adjustedRate)
+            } catch (e: Exception) {
+                logger.debug { "Error querying PLND/QMFDE: ${e.message}" }
+                return InterestRateCalculationResult.zero()
+            }
+        } else {
+            Triple("0", 0, BigDecimal.ZERO)
+        }
 
         // Step 1: 計算年天數（考慮閏年）
         val yearDays = interestCalcHelper.calculateYearDays(beginDate)
@@ -173,6 +207,9 @@ class AnnuityRateStrategy(
             // 計算該月天數
             val days = interestCalcHelper.calculateDays(currentDate, monthEndDate)
 
+            // P1-004: 每次迭代重算年天數（處理跨閏年）
+            val currentYearDays = interestCalcHelper.calculateYearDays(currentDate)
+
             // 查詢該月利率（int_rate_type='5'，投資型/宣告利率，V3 line 1800）
             val rateLookup = qiratRateLookup.lookupRate(input, "5", monthStartDate)
             val originalRate = rateLookup.originalRate
@@ -184,7 +221,7 @@ class AnnuityRateStrategy(
                 adjustedRate.divide(BigDecimal("10000"), POWER_SCALE, RoundingMode.HALF_UP)
             )
             val exponent = BigDecimal(days).divide(
-                BigDecimal(yearDays), POWER_SCALE, RoundingMode.HALF_UP
+                BigDecimal(currentYearDays), POWER_SCALE, RoundingMode.HALF_UP
             )
             val rateFactor = MathUtils.bigDecimalPow(base, exponent, POWER_SCALE)
 
@@ -233,14 +270,19 @@ class AnnuityRateStrategy(
             BigDecimal.ZERO
         }
 
+        // P0-004: 複利 actualRate 使用複利公式 (Π - 1) × 10000，而非日加權平均
+        val compoundActualRate = (cumulativeRateFactor.subtract(BigDecimal.ONE))
+            .multiply(BigDecimal("10000"))
+            .setScale(InterestRateConstants.RATE_SCALE, RoundingMode.HALF_UP)
+
         logger.debug {
             "Compound interest calculated: int_rate_type=5, " +
                 "months=$months, totalDays=$totalDays, rateFactor=$cumulativeRateFactor, " +
-                "avgRate=$averageRate, totalIntAmt=$totalIntAmt"
+                "compoundRate=$compoundActualRate, totalIntAmt=$totalIntAmt"
         }
 
         return InterestRateCalculationResult(
-            actualRate = averageRate,
+            actualRate = compoundActualRate,
             intAmt = totalIntAmt,
             monthlyDetails = monthlyDetails
         )

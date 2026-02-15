@@ -85,7 +85,9 @@ data class QmfdeDto(
     val expiredDate: LocalDate?,
     val qmfdeEntryInd: String?,
     val ivTargetYield: BigDecimal?,
-    val bundleInvInd: String?
+    val bundleInvInd: String?,
+    val intApplyYrInd: String? = null,    // P0-001: 宣告利率適用年限指標
+    val intApplyYr: Int? = null           // P0-001: 宣告利率適用年數
 )
 
 fun Qmfde.toDto(): QmfdeDto = QmfdeDto(
@@ -101,5 +103,7 @@ fun Qmfde.toDto(): QmfdeDto = QmfdeDto(
     expiredDate = expiredDate,
     qmfdeEntryInd = qmfdeEntryInd,
     ivTargetYield = ivTargetYield,
-    bundleInvInd = bundleInvInd
+    bundleInvInd = bundleInvInd,
+    intApplyYrInd = intApplyYrInd,    // P0-001: Added for AnnuityRateStrategy
+    intApplyYr = intApplyYr           // P0-001: Added for AnnuityRateStrategy
 )
